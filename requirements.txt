@@ -89,6 +89,7 @@ ipython==7.28.0
     #   ipykernel
     #   ipywidgets
     #   jupyter-console
+    #   line-profiler
 ipython-genutils==0.2.0
     # via
     #   ipykernel
@@ -132,6 +133,8 @@ jupyterlab-widgets==1.0.2
     # via ipywidgets
 kiwisolver==1.4.2
     # via matplotlib
+line-profiler==3.4.0
+    # via -r requirements.in
 markupsafe==2.0.1
     # via
     #   -r test_requirements.txt
@@ -266,6 +269,8 @@ six==1.16.0
     # via
     #   bleach
     #   python-dateutil
+snakeviz==2.1.1
+    # via -r requirements.in
 snowballstemmer==2.1.0
     # via
     #   -r test_requirements.txt
@@ -313,6 +318,7 @@ tornado==6.1
     #   ipykernel
     #   jupyter-client
     #   notebook
+    #   snakeviz
     #   terminado
 tqdm==4.62.3
     # via -r requirements.in
