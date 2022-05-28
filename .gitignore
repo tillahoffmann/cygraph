@@ -133,3 +133,6 @@ dmypy.json
 .vscode
 playground/
 workspace/
+
+cygraph/*.cpp
+cygraph/*.html
