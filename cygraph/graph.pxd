@@ -15,6 +15,7 @@ ctypedef vector_t[edge_t] edge_set_t
 
 cdef class Graph:
     cdef str _name
+    cdef dict _property_cache
     cdef node_set_t _nodes
     cdef adjacency_map_t _adjacency_map
 

@@ -2,6 +2,9 @@ from cython.operator cimport dereference
 
 
 cdef class Graph:
+    def __init__(self):
+        self._property_cache = {}
+
     @property
     def name(self):
         return self._name
@@ -10,17 +13,28 @@ cdef class Graph:
     def name(self, value):
         self._name = value
 
+    def _get_view(self, name: str, cls: type):
+        view = self._property_cache.get(name)
+        if view is not None:
+            return view
+        view = self._property_cache[name] = cls(self)
+        return view
+
     @property
     def nodes(self):
-        return NodeView(self)
+        return self._get_view("nodes", NodeView)
 
     @property
     def edges(self):
-        return EdgeView(self)
+        return self._get_view("edges", EdgeView)
 
     @property
     def degree(self):
-        return DegreeView(self)
+        return self._get_view("degree", DegreeView)
+
+    @property
+    def neighbors(self):
+        return self._get_view("neighbors", NeighborView)
 
     @property
     def adj(self):
@@ -33,20 +47,18 @@ cdef class Graph:
         return self.number_of_nodes()
 
     def __iter__(self):
-        for node in sorted(self._nodes):
-            yield node
+        # `iter` implicitly converts to a python set, ensuring that nodes are ordered.
+        return iter(self._nodes)
 
     def __getitem__(self, node):
         return self.neighbors(node)
-
-    def neighbors(self, node):
-        return sorted(self._adjacency_map[node])
 
     cpdef int add_node(self, node_t node):
         return self._nodes.insert(node).second
 
     cpdef int add_nodes_from(self, node_set_t nodes):
         cdef count_t num_added = 0
+        cdef node_t node
         for node in nodes:
             num_added += self.add_node(node)
         return num_added
@@ -59,6 +71,7 @@ cdef class Graph:
 
     cpdef int remove_nodes_from(self, node_set_t nodes):
         cdef count_t num_removed = 0
+        cdef node_t node
         for node in nodes:
             num_removed += self.remove_node(node)
         return num_removed
@@ -114,9 +127,12 @@ cdef class Graph:
 
 
 cdef class View:
+    """
+    Base class for graph views to expose state to python.
+    """
     cdef Graph graph
 
-    def __init__(self, graph):
+    def __init__(self, graph: Graph):
         self.graph = graph
 
 
@@ -128,8 +144,8 @@ cdef class NodeView(View):
         return self
 
     def __iter__(self):
-        for node in sorted(self.graph._nodes):
-            yield node
+        # `iter` implicitly converts to a python set, ensuring that nodes are ordered.
+        return iter(self.graph)
 
 
 cdef class EdgeView(View):
@@ -162,3 +178,8 @@ cdef class DegreeView(View):
             return self
         else:
             return self[node]
+
+
+cdef class NeighborView(View):
+    def __call__(self, node: node_t):
+        return self.graph._adjacency_map[node]
