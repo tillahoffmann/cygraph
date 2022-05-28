@@ -6,7 +6,7 @@ lint :
 	flake8
 
 tests :
-	pytest -v --cov=TEMPLATE_NAME --cov-fail-under=100 --cov-report=term-missing --cov-report=html
+	pytest -v --cov=cygraph --cov-fail-under=100 --cov-report=term-missing --cov-report=html
 
 docs :
 	sphinx-build . docs/_build
