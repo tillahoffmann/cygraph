@@ -28,3 +28,7 @@ import_tests :
 
 clean :
 	rm -f cygraph/*.cpp cygraph/*.html cygraph/*.so
+
+workspace/profile.prof : cygraph/scripts/profile.py
+	mkdir -p $(dir $@)
+	python -m cProfile -o $@ -m cygraph.scripts.profile --max_duration=3 1000
