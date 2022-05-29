@@ -1,5 +1,6 @@
 import cygraph
 import functools as ft
+import itertools as it
 import networkx as nx
 import numbers
 import pytest
@@ -15,7 +16,7 @@ skip_depends_on_order = pytest.mark.skip("result depends on node ordering")
 
 
 def sorted_edges(edges):
-    return [(min(u, v), max(u, v)) for u, v in edges]
+    return list(sorted((min(u, v), max(u, v)) for u, v in edges))
 
 
 def assert_same_graph(graph1, graph2):
@@ -215,6 +216,31 @@ def test_remove_missing_node(triangle_graph: nx.Graph):
 
 
 def test_remove_missing_edge(triangle_graph: nx.Graph):
+    assert not triangle_graph.has_edge(99, 98)
     with pytest.raises((KeyError, nx.NetworkXError)):
         triangle_graph.remove_edge(99, 98)
     triangle_graph.remove_edges_from([(99, 98)])
+
+
+@pytest.mark.parametrize("name", ["nodes", "edges", "degree", "__self__"])
+def test_views(name: str):
+    density = 0.1
+    num_nodes = 100
+    num_edges = int(num_nodes * (num_nodes - 1) / 2 * density)
+    nodes = random.sample(range(10 * num_nodes), num_nodes)
+    edges = random.sample(list(it.combinations(nodes, 2)), num_edges)
+
+    graphs = []
+    for cls in [nx.Graph, cygraph.Graph]:
+        graph = cls()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        graphs.append(graph)
+
+    attrs = [graph if name == "__self__" else getattr(graph, name) for graph in graphs]
+    if name == "edges":
+        attrs = [sorted_edges(edges) for edges in attrs]
+    else:
+        attrs = [list(sorted(attr)) for attr in attrs]
+    attr1, attr2 = attrs
+    assert attr1 == attr2

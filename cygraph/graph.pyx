@@ -11,7 +11,6 @@ def patch_nx_graph():
         yield
 
 
-
 cdef class Graph:
     def __init__(self):
         self._property_cache = {}
@@ -59,26 +58,28 @@ cdef class Graph:
 
     def __iter__(self):
         # `iter` implicitly converts to a python set, ensuring that nodes are ordered.
-        return iter(self._nodes)
+        return iter(sorted(self._adjacency_map))
 
     def __getitem__(self, node):
         return self.neighbors(node)
 
     cpdef int add_node(self, node_t node):
-        return self._nodes.insert(node).second
+        # Using [node] implicitly creates the node, but we don't know whether it existed before.
+        self._adjacency_map[node]
 
     cpdef int add_nodes_from(self, node_set_t nodes):
-        cdef count_t num_added = 0
         cdef node_t node
         for node in nodes:
-            num_added += self.add_node(node)
-        return num_added
+            self.add_node(node)
 
     cpdef int _remove_node(self, node_t node):
-        for neighbor in self._adjacency_map[node]:
+        it = self._adjacency_map.find(node)
+        if it == self._adjacency_map.end():
+            return False
+        for neighbor in dereference(it).second:
             self._remove_directed_edge(neighbor, node)
-        self._adjacency_map.erase(node)
-        return self._nodes.erase(node)
+        self._adjacency_map.erase(it)
+        return True
 
     cpdef int remove_node(self, node_t node) except -1:
         if not self._remove_node(node):
@@ -92,10 +93,10 @@ cdef class Graph:
         return num_removed
 
     cpdef int has_node(self, node_t node):
-        return self._nodes.find(node) != self._nodes.end()
+        return self._adjacency_map.find(node) != self._adjacency_map.end()
 
     cpdef int number_of_nodes(self):
-        return self._nodes.size()
+        return self._adjacency_map.size()
 
     cpdef int is_directed(self):
         return False
@@ -107,11 +108,12 @@ cdef class Graph:
         return self._adjacency_map[source].insert(target).second
 
     cdef int _remove_directed_edge(self, node_t source, node_t target):
-        return self._adjacency_map[source].erase(target)
+        it = self._adjacency_map.find(source)
+        if it == self._adjacency_map.end():
+            return False
+        return dereference(it).second.erase(target)
 
     cpdef int add_edge(self, node_t u, node_t v):
-        self.add_node(u)
-        self.add_node(v)
         return self._add_directed_edge(u, v) and self._add_directed_edge(v, u)
 
     cpdef int add_edges_from(self, edge_set_t edges):
@@ -189,8 +191,6 @@ cdef class DegreeView(View):
         it = self.graph._adjacency_map.find(node)
         if it != self.graph._adjacency_map.end():
             return dereference(it).second.size()
-        if self.graph.has_node(node):
-            return 0
         raise KeyError(f"node {node} does not exist")
 
     def __iter__(self):
@@ -209,6 +209,4 @@ cdef class NeighborView(View):
         it = self.graph._adjacency_map.find(node)
         if it != self.graph._adjacency_map.end():
             return dereference(it).second
-        if self.graph.has_node(node):
-            return set()
         raise KeyError(f"node {node} does not exist")
