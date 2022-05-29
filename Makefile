@@ -25,3 +25,6 @@ test_requirements.txt : test_requirements.in setup.py
 
 import_tests :
 	cd tests && cythonize -af3 test.pyx
+
+clean :
+	rm -f cygraph/*.cpp cygraph/*.html cygraph/*.so
