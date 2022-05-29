@@ -18,6 +18,8 @@ charset-normalizer==2.0.7
     # via requests
 coverage[toml]==6.0.2
     # via pytest-cov
+cython==0.29.30
+    # via cygraph
 docutils==0.17.1
     # via sphinx
 flake8==4.0.1

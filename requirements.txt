@@ -46,7 +46,9 @@ coverage[toml]==6.0.2
 cycler==0.11.0
     # via matplotlib
 cython==0.29.30
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   -r test_requirements.txt
 debugpy==1.5.0
     # via ipykernel
 decorator==5.1.0

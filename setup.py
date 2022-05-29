@@ -42,6 +42,7 @@ setup(
     ],
     extras_require={
         "tests": [
+            "cython",
             "flake8",
             "networkx",
             "pytest",
