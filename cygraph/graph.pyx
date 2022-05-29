@@ -63,17 +63,21 @@ cdef class Graph:
             num_added += self.add_node(node)
         return num_added
 
-    cpdef int remove_node(self, node_t node):
+    cpdef int _remove_node(self, node_t node):
         for neighbor in self._adjacency_map[node]:
             self._remove_directed_edge(neighbor, node)
         self._adjacency_map.erase(node)
         return self._nodes.erase(node)
 
+    cpdef int remove_node(self, node_t node) except -1:
+        if not self._remove_node(node):
+            raise KeyError(f"node {node} does not exist")
+
     cpdef int remove_nodes_from(self, node_set_t nodes):
         cdef count_t num_removed = 0
         cdef node_t node
         for node in nodes:
-            num_removed += self.remove_node(node)
+            num_removed += self._remove_node(node)
         return num_removed
 
     cpdef int has_node(self, node_t node):
@@ -105,13 +109,17 @@ cdef class Graph:
             num_added += self.add_edge(edge.first, edge.second)
         return num_added
 
-    cpdef int remove_edge(self, node_t u, node_t v):
+    cpdef int _remove_edge(self, node_t u, node_t v):
         return self._remove_directed_edge(u, v) and self._remove_directed_edge(v, u)
+
+    cpdef int remove_edge(self, node_t u, node_t v) except -1:
+        if not self._remove_edge(u, v):
+            raise KeyError(f"edge {(u, v)} does not exist")
 
     cpdef int remove_edges_from(self, edge_set_t edges):
         cdef count_t num_removed = 0
         for edge in edges:
-            num_removed += self.remove_edge(edge.first, edge.second)
+            num_removed += self._remove_edge(edge.first, edge.second)
 
     cpdef int has_edge(self, node_t u, node_t v):
         it = self._adjacency_map.find(u)
@@ -167,7 +175,12 @@ cdef class DegreeView(View):
     Degree view yielding sorted tuples `(node, degree)`. It supports indexing.
     """
     def __getitem__(self, node):
-        return self.graph._adjacency_map[node].size()
+        it = self.graph._adjacency_map.find(node)
+        if it != self.graph._adjacency_map.end():
+            return dereference(it).second.size()
+        if self.graph.has_node(node):
+            return 0
+        raise KeyError(f"node {node} does not exist")
 
     def __iter__(self):
         for node in sorted(self.graph._adjacency_map):
@@ -182,4 +195,9 @@ cdef class DegreeView(View):
 
 cdef class NeighborView(View):
     def __call__(self, node: node_t):
-        return self.graph._adjacency_map[node]
+        it = self.graph._adjacency_map.find(node)
+        if it != self.graph._adjacency_map.end():
+            return dereference(it).second
+        if self.graph.has_node(node):
+            return set()
+        raise KeyError(f"node {node} does not exist")

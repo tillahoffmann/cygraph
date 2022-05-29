@@ -24,14 +24,16 @@ cdef class Graph:
 
     cpdef int add_node(self, node_t node)
     cpdef int add_nodes_from(self, node_set_t nodes)
-    cpdef int remove_node(self, node_t node)
+    cpdef int _remove_node(self, node_t node)
+    cpdef int remove_node(self, node_t node) except -1
     cpdef int remove_nodes_from(self, node_set_t nodes)
     cpdef int has_node(self, node_t node)
     cpdef int number_of_nodes(self)
 
     cpdef int add_edge(self, node_t u, node_t v)
     cpdef int add_edges_from(self, edge_set_t edges)
-    cpdef int remove_edge(self, node_t u, node_t v)
+    cpdef int _remove_edge(self, node_t u, node_t v)
+    cpdef int remove_edge(self, node_t u, node_t v) except -1
     cpdef int remove_edges_from(self, edge_set_t edges)
     cpdef int has_edge(self, node_t u, node_t v)
     cpdef int number_of_edges(self)

@@ -100,7 +100,7 @@ def assert_same_graph(graph1, graph2):
     (nx.duplication_divergence_graph, {"n": 17, "p": 0.1, "seed": 0}),
     (nx.partial_duplication_graph, {"N": 20, "n": 3, "p": 0.2, "q": 0.3, "seed": 0}),
 ])
-def test_generators(generator: typing.Callable, kwargs: dict):
+def test_networkx_generators(generator: typing.Callable, kwargs: dict):
     graph1 = generator(**kwargs)
     if any(not isinstance(node, numbers.Integral) for node in graph1):
         pytest.skip("requires non-integer labels")
@@ -163,3 +163,65 @@ def test_subgraph(graph_pair):
 def test_shortest_paths(graph_pair):
     paths1, paths2 = [dict(nx.all_pairs_shortest_path(graph)) for graph in graph_pair]
     assert paths1 == paths2
+
+
+@pytest.fixture(params=[nx.Graph, cygraph.Graph], ids=["nx", "cygraph"])
+def graph_cls(request: pytest.FixtureRequest):
+    return request.param
+
+
+@pytest.fixture
+def triangle_graph(graph_cls):
+    graph = graph_cls()
+    graph.add_edges_from([(0, 1), (0, 2), (1, 2)])
+    return graph
+
+
+def test_get_set_name(triangle_graph: nx.Graph):
+    assert triangle_graph.name == "" or triangle_graph.name is None
+    triangle_graph.name = "name"
+    assert triangle_graph.name == "name"
+
+
+def test_remove_connected_node(triangle_graph: nx.Graph):
+    assert all(k == 2 for _, k in triangle_graph.degree)
+    triangle_graph.remove_node(0)
+    assert not triangle_graph.has_node(0)
+    with pytest.raises(KeyError):
+        triangle_graph.degree[0]
+    assert set(triangle_graph) == {1, 2}
+    for node in triangle_graph:
+        assert 0 not in triangle_graph.neighbors(node)
+
+
+def test_degree_view(triangle_graph: nx.Graph):
+    with pytest.raises(KeyError):
+        triangle_graph.degree[99]
+    triangle_graph.add_node(99)
+    assert triangle_graph.degree[99] == 0
+
+
+def test_neighbor_view(triangle_graph: nx.Graph):
+    with pytest.raises((KeyError, nx.NetworkXError)):
+        triangle_graph.neighbors(99)
+    triangle_graph.add_node(99)
+    assert set(triangle_graph.neighbors(99)) == set()
+
+
+def test_remove_nodes_from(triangle_graph: nx.Graph):
+    triangle_graph.remove_nodes_from([0, 1])
+    assert set(triangle_graph) == {2}
+    triangle_graph.remove_nodes_from({2, 3})
+    assert len(triangle_graph) == 0
+
+
+def test_remove_missing_node(triangle_graph: nx.Graph):
+    with pytest.raises((KeyError, nx.NetworkXError)):
+        triangle_graph.remove_node(99)
+    triangle_graph.remove_nodes_from([99])
+
+
+def test_remove_missing_edge(triangle_graph: nx.Graph):
+    with pytest.raises((KeyError, nx.NetworkXError)):
+        triangle_graph.remove_edge(99, 98)
+    triangle_graph.remove_edges_from([(99, 98)])
