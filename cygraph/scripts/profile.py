@@ -27,6 +27,7 @@ def __main__(args: list[str] = None):
     configurations = [
         (nx.duplication_divergence_graph, generators.duplication_divergence_graph, {"p": 0.3}),
         (nx.fast_gnp_random_graph, generators.fast_gnp_random_graph, {"p": 10 / args.num_nodes}),
+        (nx.gnp_random_graph, generators.gnp_random_graph, {"p": 10 / args.num_nodes}),
     ]
 
     # Evaluate duration samples.
@@ -40,22 +41,13 @@ def __main__(args: list[str] = None):
             durations["cygraph"] = evaluate_durations(cygenerator, args.max_duration, kwargs)
         durations_by_generator[nxgenerator.__name__] = durations
 
-    # Average duration samples for better comparison.
-    mean_durations_by_generator = {
-        generator: {method: np.mean(durations) for method, durations in values.items()}
-        for generator, values in durations_by_generator.items()
-    }
-    # Evaluate speed-up factors relative to networkx.
-    factors_by_generator = {
-        generator: {
-            method: durations["networkx"] / duration for method, duration
-            in durations.items() if method != "networkx"
-        } for generator, durations in mean_durations_by_generator.items()
-    }
+        # Report as soon as we have the results.
+        mean_durations = {method: np.mean(values) for method, values in durations.items()}
+        factors = {method: mean_durations["networkx"] / duration for method, duration
+                   in mean_durations.items() if method != "networkx"}
 
-    for generator, factors in factors_by_generator.items():
         line = "; ".join(f"{method}: {factor:.3f}x" for method, factor in factors.items())
-        print(f"{generator} -- {line}")
+        print(f"{nxgenerator.__name__} -- {line}")
 
     return durations_by_generator
 
