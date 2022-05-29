@@ -109,14 +109,7 @@ def test_networkx_generators(generator: typing.Callable, kwargs: dict):
     if generator is nx.empty_graph:
         graph2 = patched_empty_graph(**kwargs)
     else:
-        # Not all generators support `create_using` so we patch the generators. It would be more
-        # convenient to patch the default argument on `empty_graph`, but it seems to be compiled.
-        with mock.patch("networkx.Graph", cygraph.Graph), \
-                mock.patch("networkx.empty_graph", patched_empty_graph), \
-                mock.patch("networkx.generators.classic.empty_graph", patched_empty_graph), \
-                mock.patch("networkx.generators.lattice.empty_graph", patched_empty_graph), \
-                mock.patch("networkx.generators.random_graphs.empty_graph", patched_empty_graph), \
-                mock.patch("networkx.generators.small.empty_graph", patched_empty_graph):
+        with cygraph.graph.patch_nx_graph():
             graph2 = generator(**kwargs)
     assert isinstance(graph1, nx.Graph)
     assert isinstance(graph2, cygraph.Graph)
