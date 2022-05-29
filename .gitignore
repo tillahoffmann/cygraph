@@ -136,3 +136,5 @@ workspace/
 
 cygraph/*.cpp
 cygraph/*.html
+tests/test.cpp
+tests/test.html
