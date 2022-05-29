@@ -1,5 +1,5 @@
 import contextlib
-from cython.operator cimport dereference
+from cython.operator cimport dereference, preincrement
 import numbers
 from unittest import mock
 
@@ -57,8 +57,7 @@ cdef class Graph:
         return self.number_of_nodes()
 
     def __iter__(self):
-        # `iter` implicitly converts to a python set, ensuring that nodes are ordered.
-        return iter(sorted(self._adjacency_map))
+        return NodeIterator(self)
 
     def __getitem__(self, node):
         return self.neighbors(node)
@@ -165,8 +164,27 @@ cdef class NodeView(View):
         return self
 
     def __iter__(self):
-        # `iter` implicitly converts to a python set, ensuring that nodes are ordered.
         return iter(self.graph)
+
+
+cdef class NodeIterator:
+    """
+    Dedicated iterator for nodes (see https://stackoverflow.com/q/72426351/1150961).
+    """
+    cdef Graph graph
+    # Using adjacency_map_t.iterator doesn't seem to work.
+    cdef unordered_map_t[node_t, unordered_set_t[node_t]].iterator it
+
+    def __init__(self, Graph graph):
+        self.graph = graph
+        self.it = graph._adjacency_map.begin()
+
+    def __next__(self):
+        if self.it == self.graph._adjacency_map.end():
+            raise StopIteration
+        value = dereference(self.it).first
+        preincrement(self.it)
+        return value
 
 
 cdef class EdgeView(View):

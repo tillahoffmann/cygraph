@@ -12,7 +12,10 @@ from unittest import mock
 skip_multigraph = pytest.mark.skip("multigraphs are not supported")
 skip_non_integer_labels = pytest.mark.skip("requires non-integer labels")
 skip_requires_attributes = pytest.mark.skip("requires attributes")
-skip_depends_on_order = pytest.mark.skip("result depends on node ordering")
+order_dependent_generators = {
+    nx.gnm_random_graph, nx.powerlaw_cluster_graph, nx.extended_barabasi_albert_graph,
+    nx.newman_watts_strogatz_graph, nx.duplication_divergence_graph,
+}
 
 
 def sorted_edges(edges):
@@ -118,8 +121,8 @@ def test_networkx_generators(generator: typing.Callable, kwargs: dict):
         graph.number_of_nodes() == len(list(graph.nodes))
         graph.number_of_edges() == len(list(graph.edges()))
 
-    if generator in {nx.powerlaw_cluster_graph, nx.extended_barabasi_albert_graph}:
-        # The generators use G[node] and G.neighbors(node) which have a non-deterministic ordering.
+    # These generators depend on the non-deterministic node order, and we skip exact checks.
+    if generator in order_dependent_generators:
         return
 
     assert graph1.number_of_nodes() == graph2.number_of_nodes()
