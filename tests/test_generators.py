@@ -18,9 +18,13 @@ def test_duplication_divergence():
     assert all(k for _, k in graph.degree)
 
 
+@pytest.mark.parametrize("generator", [
+    generators.fast_gnp_random_graph,
+    generators.gnp_random_graph,
+])
 @pytest.mark.parametrize("n, p", [(10000, 0.001), (10, 0.5)])
-def test_fast_gnp_random_graph(n, p):
-    graph = generators.fast_gnp_random_graph(n, p)
+def test_x_gnp_random_graph(generator, n, p):
+    graph = generator(n, p)
     dist = stats.binom(n * (n - 1) // 2, p)
     pval = dist.cdf(graph.number_of_edges())
     pval = min(pval, 1 - pval)
