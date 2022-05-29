@@ -80,3 +80,22 @@ def fast_gnp_random_graph(int n, float p, Graph graph = None, RandomEngine rando
         if v < n:
             graph.add_edge(v, w)
     return graph
+
+
+def gnp_random_graph(int n, float p, Graph graph = None, RandomEngine random_engine = None):
+    cdef bernoulli_distribution create_edge = bernoulli_distribution(p)
+    cdef node_t u, v
+    cdef bint added
+    assert_interval("p", p, 0, 1)
+    assert_interval("n", n, 1, None)
+    random_engine = get_random_engine(random_engine)
+
+    graph = graph or Graph()
+
+    for u in range(n):
+        graph.add_node(u)
+        for v in range(u + 1, n):
+            if create_edge(random_engine.instance):
+                graph.add_edge(u, v)
+
+    return graph
