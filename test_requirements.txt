@@ -38,6 +38,8 @@ mccabe==0.6.1
     # via flake8
 networkx==2.8.2
     # via cygraph
+numpy==1.22.4
+    # via scipy
 packaging==21.0
     # via
     #   pytest
@@ -64,6 +66,8 @@ pytz==2021.3
     # via babel
 requests==2.26.0
     # via sphinx
+scipy==1.8.1
+    # via -r test_requirements.in
 snowballstemmer==2.1.0
     # via sphinx
 sphinx==4.2.0
