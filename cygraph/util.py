@@ -36,9 +36,6 @@ def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high:
 class Timer:
     """
     Simple timer that can be used as a context.
-
-    Attrs:
-        duration: Duration for which the context was active.
     """
     def __init__(self):
         self.start = None
@@ -53,6 +50,9 @@ class Timer:
 
     @property
     def duration(self) -> float:
+        """
+        Duration for which the context was active.
+        """
         if self.start is None:
             raise ValueError("timer has not yet been started")  # pragma: no cover
         return (self.end or time.time()) - self.start
