@@ -32,6 +32,7 @@ ext_modules = cythonize(
         'language_level': 3,
         'linetrace': True,
     },
+    compile_time_env={"DEBUG_LOGGING": bool(os.environ.get("DEBUG_LOGGING"))},
 )
 
 setup(

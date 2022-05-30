@@ -13,6 +13,8 @@ env:
   SEED: "0"
   # Required for cython coverage checks.
   CYTHON_TRACE: "1"
+  # To facilitate debugging without having an interactive cython debugger.
+  DEBUG_LOGGING: "1"
 
 jobs:
   build:
