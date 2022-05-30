@@ -1,27 +1,8 @@
 import argparse
 import numpy as np
-import time
 from tqdm import tqdm
 from .._performance_experiments import AllocationExperiment, UniqueContainerExperiment
-
-
-class Timer:
-    def __init__(self):
-        self.start = None
-        self.end = None
-
-    def __enter__(self):
-        self.start = time.time()
-        return self
-
-    def __exit__(self, *_):
-        self.end = time.time()
-
-    @property
-    def duration(self):
-        if self.start is None or self.end is None:
-            raise ValueError("timer has not yet been used or has not finished")  # pragma: no cover
-        return self.end - self.start
+from ..util import Timer
 
 
 def __main__(args: list[str] = None):

@@ -1,5 +1,6 @@
 import contextlib
 import numbers
+import time
 from unittest import mock
 
 
@@ -30,6 +31,32 @@ def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high:
         raise ValueError(f"{name} must belong to the interval {'[' if inclusive_low else '('}"
                          f"{'-inf' if low is None else low}, {'inf' if high is None else high}"
                          f"{']' if inclusive_high else ')'} but got {value}")
+
+
+class Timer:
+    """
+    Simple timer that can be used as a context.
+
+    Attrs:
+        duration: Duration for which the context was active.
+    """
+    def __init__(self):
+        self.start = None
+        self.end = None
+
+    def __enter__(self):
+        self.start = time.time()
+        return self
+
+    def __exit__(self, *_):
+        self.end = time.time()
+
+    @property
+    def duration(self) -> float:
+        if self.start is None:
+            raise ValueError("timer has not yet been started")  # pragma: no cover
+        return (self.end or time.time()) - self.start
+
 
 @contextlib.contextmanager
 def patch_nx_graph():
