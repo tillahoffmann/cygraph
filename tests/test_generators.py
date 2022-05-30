@@ -2,6 +2,7 @@ from cygraph import generators
 import networkx as nx
 import pytest
 from scipy import stats
+import typing
 
 
 def test_random_engine():
@@ -15,34 +16,22 @@ def test_random_engine():
         generators.get_random_engine("invalid value")
 
 
-@pytest.mark.parametrize("args", [(.3,), (.3, .4)])
-def test_duplication_mutation(args):
-    graph = generators.duplication_mutation_graph(100, *args)
-    assert graph.number_of_nodes() == 100
-    assert all(k for _, k in graph.degree)
-    assert nx.is_connected(graph)
-
-
-def test_duplication_complementation():
-    graph = generators.duplication_complementation_graph(100, .5, .2)
-    assert graph.number_of_nodes() == 100
-    assert all(k for _, k in graph.degree)
-    assert nx.is_connected(graph)
-
-
-@pytest.mark.parametrize("generator", [
-    # generators.fast_gnp_random_graph,
-    generators.gnp_random_graph,
+@pytest.mark.parametrize("num_nodes", [100, 1000])
+@pytest.mark.parametrize("generator, kwargs, connected", [
+    (generators.duplication_mutation_graph, {"deletion_proba": 0.5, "mutation_proba": 0.5}, True),
+    (generators.duplication_complementation_graph,
+     {"deletion_proba": 0.5, "interaction_proba": 0.5}, True),
+    (generators.gnp_random_graph, {"p": 0.9}, True),
+    (generators.gnp_random_graph, {"p": 1e-3}, False),
 ])
-@pytest.mark.parametrize("n, p", [(1000, 0.01), (10, 0.5)])
-def test_x_gnp_random_graph(generator, n, p):
-    graph = generator(n, p)
-    dist = stats.binom(n * (n - 1) // 2, p)
-    pval = dist.cdf(graph.number_of_edges())
-    pval = min(pval, 1 - pval)
-    assert pval > 0.01
+def test_generators(num_nodes: int, generator: typing.Callable, kwargs: dict, connected: bool):
+    graph = generator(num_nodes, **kwargs)
+    assert graph.number_of_nodes() == num_nodes
+    if connected is not None:
+        assert nx.is_connected(graph) == connected
 
-
-def test_redirection():
-    graph = generators.redirection_graph(100, 0.3, 4)
-    assert graph.number_of_nodes() == 100
+    if generator is generators.gnp_random_graph:
+        dist = stats.binom(num_nodes * (num_nodes - 1) // 2, kwargs["p"])
+        pval = dist.cdf(graph.number_of_edges())
+        pval = min(pval, 1 - pval)
+        assert pval > 0.001
