@@ -1,4 +1,5 @@
 from cygraph import generators
+import networkx as nx
 import pytest
 from scipy import stats
 
@@ -10,12 +11,16 @@ def test_random_engine():
     engine = generators.get_random_engine(3)
     assert engine() == 2365658986
     assert generators.get_random_engine(engine) is engine
+    with pytest.raises(ValueError):
+        generators.get_random_engine("invalid value")
 
 
-def test_duplication_divergence():
-    graph = generators.duplication_divergence_graph(100, .3)
+@pytest.mark.parametrize("kwargs", [{"p": .3}, {"p": .3, "beta": .4}])
+def test_duplication_divergence(kwargs):
+    graph = generators.duplication_divergence_graph(100, **kwargs)
     assert graph.number_of_nodes() == 100
     assert all(k for _, k in graph.degree)
+    assert nx.is_connected(graph)
 
 
 @pytest.mark.parametrize("generator", [

@@ -7,10 +7,11 @@ from libcpp.vector cimport vector as vector_t
 ctypedef long count_t
 ctypedef long node_t
 ctypedef unordered_set_t[node_t] node_set_t
+ctypedef vector_t[node_t] node_list_t
 ctypedef unordered_map_t[node_t, node_set_t] adjacency_map_t
 ctypedef unordered_map_t[node_t, count_t] degree_map_t
 ctypedef pair_t[node_t, node_t] edge_t
-ctypedef vector_t[edge_t] edge_set_t
+ctypedef vector_t[edge_t] edge_list_t
 
 
 cdef class Graph:
@@ -30,10 +31,10 @@ cdef class Graph:
     cpdef int number_of_nodes(self)
 
     cpdef int add_edge(self, node_t u, node_t v)
-    cpdef int add_edges_from(self, edge_set_t edges)
+    cpdef int add_edges_from(self, edge_list_t edges)
     cpdef int _remove_edge(self, node_t u, node_t v)
     cpdef int remove_edge(self, node_t u, node_t v) except -1
-    cpdef int remove_edges_from(self, edge_set_t edges)
+    cpdef int remove_edges_from(self, edge_list_t edges)
     cpdef int has_edge(self, node_t u, node_t v)
     cpdef int number_of_edges(self)
     cdef int _add_directed_edge(self, node_t source, node_t target)

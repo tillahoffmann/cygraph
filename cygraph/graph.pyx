@@ -115,7 +115,7 @@ cdef class Graph:
     cpdef int add_edge(self, node_t u, node_t v):
         return self._add_directed_edge(u, v) and self._add_directed_edge(v, u)
 
-    cpdef int add_edges_from(self, edge_set_t edges):
+    cpdef int add_edges_from(self, edge_list_t edges):
         cdef count_t num_added = 0
         for edge in edges:
             num_added += self.add_edge(edge.first, edge.second)
@@ -128,7 +128,7 @@ cdef class Graph:
         if not self._remove_edge(u, v):
             raise KeyError(f"edge {(u, v)} does not exist")
 
-    cpdef int remove_edges_from(self, edge_set_t edges):
+    cpdef int remove_edges_from(self, edge_list_t edges):
         cdef count_t num_removed = 0
         for edge in edges:
             num_removed += self._remove_edge(edge.first, edge.second)
