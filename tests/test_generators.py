@@ -41,3 +41,8 @@ def test_x_gnp_random_graph(generator, n, p):
     pval = dist.cdf(graph.number_of_edges())
     pval = min(pval, 1 - pval)
     assert pval > 0.01
+
+
+def test_redirection():
+    graph = generators.redirection_graph(100, 0.3, 4)
+    assert graph.number_of_nodes() == 100
