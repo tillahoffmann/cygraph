@@ -1,13 +1,12 @@
 from libcpp.unordered_map cimport unordered_map as unordered_map_t
-from libcpp.unordered_set cimport unordered_set as unordered_set_t
 from libcpp.utility cimport pair as pair_t
 from libcpp.vector cimport vector as vector_t
 
 
 ctypedef long count_t
 ctypedef long node_t
-ctypedef unordered_set_t[node_t] node_set_t
-ctypedef unordered_map_t[node_t, node_set_t] adjacency_map_t
+ctypedef vector_t[node_t] node_list_t
+ctypedef unordered_map_t[node_t, node_list_t] adjacency_map_t
 ctypedef unordered_map_t[node_t, count_t] degree_map_t
 ctypedef pair_t[node_t, node_t] edge_t
 ctypedef vector_t[edge_t] edge_set_t
@@ -22,10 +21,10 @@ cdef class Graph:
     cpdef int is_multigraph(self)
 
     cpdef int add_node(self, node_t node)
-    cpdef int add_nodes_from(self, node_set_t nodes)
+    cpdef int add_nodes_from(self, node_list_t nodes)
     cpdef int _remove_node(self, node_t node)
     cpdef int remove_node(self, node_t node) except -1
-    cpdef int remove_nodes_from(self, node_set_t nodes)
+    cpdef int remove_nodes_from(self, node_list_t nodes)
     cpdef int has_node(self, node_t node)
     cpdef int number_of_nodes(self)
 
