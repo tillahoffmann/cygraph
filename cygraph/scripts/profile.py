@@ -1,12 +1,11 @@
 import argparse
-from cygraph.util import patch_nx_graph
-from cygraph import generators
 import functools as ft
 import networkx as nx
 import numpy as np
 from tqdm import tqdm
 import typing
-from ..util import Timer
+from ..util import patch_nx_graph, Timer
+from .. import generators
 
 
 def evaluate_durations(generator: typing.Callable, max_duration: float, num_nodes: int,
@@ -52,7 +51,12 @@ def __main__(args: list[str] = None):
             "networkx": ft.partial(nx.gnp_random_graph, p=10 / args.num_nodes),
             "patched": patched(ft.partial(nx.gnp_random_graph, p=10 / args.num_nodes)),
             "cygraph": ft.partial(generators.gnp_random_graph, p=10 / args.num_nodes),
-        }
+        },
+        "gnr_graph": {
+            "networkx": ft.partial(nx.gnr_graph, p=0.5),
+            # "patched" is not an option because `gnr_graph` requires a directed graph class.
+            "cygraph": ft.partial(generators.redirection_graph, p=0.5, m=1),
+        },
     }
 
     # Evaluate duration samples.
