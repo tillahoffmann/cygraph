@@ -1,6 +1,10 @@
 from cython.operator cimport dereference, preincrement
 import numbers
 
+IF DEBUG_LOGGING:
+    import logging
+    LOGGER = logging.getLogger()
+
 
 cdef class Graph:
     def __init__(self):
@@ -56,6 +60,8 @@ cdef class Graph:
     cpdef int add_node(self, node_t node):
         # Using [node] implicitly creates the node, but we don't know whether it existed before.
         self._adjacency_map[node]
+        IF DEBUG_LOGGING:
+            LOGGER.info("added node %d", node)
 
     cpdef int add_nodes_from(self, node_set_t nodes):
         cdef node_t node
@@ -74,6 +80,8 @@ cdef class Graph:
     cpdef int remove_node(self, node_t node) except -1:
         if not self._remove_node(node):
             raise KeyError(f"node {node} does not exist")
+        IF DEBUG_LOGGING:
+            LOGGER.info("removed node %d", node)
 
     cpdef int remove_nodes_from(self, node_set_t nodes):
         cdef count_t num_removed = 0
@@ -104,6 +112,8 @@ cdef class Graph:
         return dereference(it).second.erase(target)
 
     cpdef int add_edge(self, node_t u, node_t v):
+        IF DEBUG_LOGGING:
+            LOGGER.info("added edge (%d, %d)", u, v)
         return self._add_directed_edge(u, v) and self._add_directed_edge(v, u)
 
     cpdef int add_edges_from(self, edge_list_t edges):
@@ -118,6 +128,8 @@ cdef class Graph:
     cpdef int remove_edge(self, node_t u, node_t v) except -1:
         if not self._remove_edge(u, v):
             raise KeyError(f"edge {(u, v)} does not exist")
+        IF DEBUG_LOGGING:
+            LOGGER.info("removed edge (%d, %d)", u, v)
 
     cpdef int remove_edges_from(self, edge_list_t edges):
         cdef count_t num_removed = 0

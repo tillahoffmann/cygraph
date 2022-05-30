@@ -1,6 +1,7 @@
 import cygraph
 import functools as ft
 import itertools as it
+import logging
 import networkx as nx
 import numbers
 import pytest
@@ -249,3 +250,23 @@ def test_views(name: str):
         attrs = [list(sorted(attr)) for attr in attrs]
     attr1, attr2 = attrs
     assert attr1 == attr2
+
+
+@pytest.mark.skipif(not cygraph.DEBUG_LOGGING, reason="debug logging not enabled")
+def test_debug_logging_add_remove_node(caplog: pytest.LogCaptureFixture):
+    graph = cygraph.Graph()
+    with caplog.at_level(logging.INFO):
+        graph.add_node(17)
+        graph.remove_node(17)
+    assert "added node 17" in caplog.text
+    assert "removed node 17" in caplog.text
+
+
+@pytest.mark.skipif(not cygraph.DEBUG_LOGGING, reason="debug logging not enabled")
+def test_debug_logging_add_remove_edge(caplog: pytest.LogCaptureFixture):
+    graph = cygraph.Graph()
+    with caplog.at_level(logging.INFO):
+        graph.add_edge(0, 7)
+        graph.remove_edge(0, 7)
+    assert "added edge (0, 7)" in caplog.text
+    assert "removed edge (0, 7)" in caplog.text
