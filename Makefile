@@ -32,3 +32,7 @@ clean :
 workspace/profile.prof : cygraph/scripts/profile.py
 	mkdir -p $(dir $@)
 	python -m cProfile -o $@ -m cygraph.scripts.profile --max_duration=3 1000
+
+workspace/performance_experiments.txt :
+	mkdir -p $(dir $@)
+	python -m cygraph.scripts.performance_experiments --num_repeats=250 > $@
