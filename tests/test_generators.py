@@ -16,8 +16,8 @@ def test_random_engine():
 
 
 @pytest.mark.parametrize("args", [(.3,), (.3, .4)])
-def test_duplication_divergence(args):
-    graph = generators.duplication_divergence_graph(100, *args)
+def test_duplication_mutation(args):
+    graph = generators.duplication_mutation_graph(100, *args)
     assert graph.number_of_nodes() == 100
     assert all(k for _, k in graph.degree)
     assert nx.is_connected(graph)
