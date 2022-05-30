@@ -245,7 +245,8 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
 #     return graph
 
 
-def gnp_random_graph(n: int, p: float, graph: Graph = None, random_engine: RandomEngine = None) \
+# `n` needs a C-style type declaration here for typing to work; not sure why.
+def gnp_random_graph(int n, p: float, graph: Graph = None, random_engine: RandomEngine = None) \
         -> Graph:
     r"""
     Erdos-Renyi or :math:`G(n, p)` graph. See
