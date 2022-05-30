@@ -10,6 +10,8 @@ def test_random_engine():
     engine = generators.get_random_engine(3)
     assert engine() == 2365658986
     assert generators.get_random_engine(engine) is engine
+    with pytest.raises(ValueError):
+        generators.get_random_engine("invalid value")
 
 
 @pytest.mark.parametrize("kwargs", [{"p": .3}, {"p": .3, "beta": .4}])
