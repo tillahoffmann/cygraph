@@ -12,8 +12,9 @@ def test_random_engine():
     assert generators.get_random_engine(engine) is engine
 
 
-def test_duplication_divergence():
-    graph = generators.duplication_divergence_graph(100, .3)
+@pytest.mark.parametrize("kwargs", [{"p": .3}, {"p": .3, "beta": .4}])
+def test_duplication_divergence(kwargs):
+    graph = generators.duplication_divergence_graph(100, **kwargs)
     assert graph.number_of_nodes() == 100
     assert all(k for _, k in graph.degree)
 
