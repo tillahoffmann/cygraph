@@ -1,4 +1,4 @@
-from .graph cimport Graph, node_t, node_set_t
+from .graph cimport Graph, node_t
 from .libcpp.random cimport bernoulli_distribution, mt19937, random_device, uniform_real_distribution
 from libc cimport math
 from libcpp.utility cimport move
@@ -65,6 +65,8 @@ def fast_gnp_random_graph(int n, float p, Graph graph = None, RandomEngine rando
 
     if not graph:
         graph = Graph()
+    for i in range(n):
+        graph.add_node(i)
 
     lp = math.log1p(-p)
 
