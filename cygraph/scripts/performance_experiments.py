@@ -26,8 +26,8 @@ class Timer:
 
 def __main__(args: list[str] = None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_repeats", type=int, default=100,
-                        help="number of repetitions to measure execution time")
+    parser.add_argument("--num_repeats", type=int, default=100, help="number of repetitions to "
+                        "measure execution time; script runtime scales quadratically")
     parser.add_argument("--population_size", type=int, default=1000,
                         help="number of elements to run experiments for")
     args = parser.parse_args(args)
