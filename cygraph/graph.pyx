@@ -1,5 +1,6 @@
 import contextlib
 from cython.operator cimport dereference, preincrement
+from libcpp.algorithm cimport lower_bound
 import numbers
 from unittest import mock
 
@@ -66,7 +67,7 @@ cdef class Graph:
         # Using [node] implicitly creates the node, but we don't know whether it existed before.
         self._adjacency_map[node]
 
-    cpdef int add_nodes_from(self, node_set_t nodes):
+    cpdef int add_nodes_from(self, node_list_t nodes):
         cdef node_t node
         for node in nodes:
             self.add_node(node)
@@ -84,7 +85,7 @@ cdef class Graph:
         if not self._remove_node(node):
             raise KeyError(f"node {node} does not exist")
 
-    cpdef int remove_nodes_from(self, node_set_t nodes):
+    cpdef int remove_nodes_from(self, node_list_t nodes):
         cdef count_t num_removed = 0
         cdef node_t node
         for node in nodes:
@@ -104,13 +105,28 @@ cdef class Graph:
         return False
 
     cdef int _add_directed_edge(self, node_t source, node_t target):
-        return self._adjacency_map[source].insert(target).second
+        cdef node_list_t* neighbors = &self._adjacency_map[source]
+        # Inserting with a lower-bound hint ensures the vector remains sorted and easy to search.
+        it = lower_bound(neighbors.begin(), neighbors.end(), target)
+        if it == neighbors.end() or dereference(it) != target:
+            neighbors.insert(it, target)
+            return True
+        return False
 
     cdef int _remove_directed_edge(self, node_t source, node_t target):
+        cdef node_list_t* neighbors
         it = self._adjacency_map.find(source)
+        # Nothing to be done if the node doesn't exist.
         if it == self._adjacency_map.end():
             return False
-        return dereference(it).second.erase(target)
+        # Find target in the list of neighbors.
+        neighbors = &dereference(it).second
+        jt = lower_bound(neighbors.begin(), neighbors.end(), target)
+        # Remove if it exists.
+        if jt != dereference(it).second.end() and dereference(jt) == target:
+            dereference(it).second.erase(jt)
+            return True
+        return False
 
     cpdef int add_edge(self, node_t u, node_t v):
         return self._add_directed_edge(u, v) and self._add_directed_edge(v, u)
@@ -134,10 +150,13 @@ cdef class Graph:
             num_removed += self._remove_edge(edge.first, edge.second)
 
     cpdef int has_edge(self, node_t u, node_t v):
+        cdef node_list_t* neighbors
         it = self._adjacency_map.find(u)
         if it == self._adjacency_map.end():
             return False
-        return dereference(it).second.find(v) != dereference(it).second.end()
+        neighbors = &dereference(it).second
+        jt = lower_bound(neighbors.begin(), neighbors.end(), v)
+        return jt != neighbors.end() and dereference(jt) == v
 
     cpdef int number_of_edges(self):
         cdef int num_edges = 0
@@ -173,7 +192,7 @@ cdef class NodeIterator:
     """
     cdef Graph graph
     # Using adjacency_map_t.iterator doesn't seem to work.
-    cdef unordered_map_t[node_t, unordered_set_t[node_t]].iterator it
+    cdef unordered_map_t[node_t, vector_t[node_t]].iterator it
 
     def __init__(self, Graph graph):
         self.graph = graph
