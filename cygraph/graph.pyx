@@ -1,14 +1,5 @@
-import contextlib
 from cython.operator cimport dereference, preincrement
 import numbers
-from unittest import mock
-
-
-@contextlib.contextmanager
-def patch_nx_graph():
-    with mock.patch("networkx.empty_graph.__defaults__", (0, None, Graph)), \
-            mock.patch("networkx.Graph", Graph):
-        yield
 
 
 cdef class Graph:

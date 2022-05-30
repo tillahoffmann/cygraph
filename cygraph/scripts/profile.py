@@ -1,19 +1,36 @@
 import argparse
-from cygraph.graph import patch_nx_graph
+from cygraph.util import patch_nx_graph
 from cygraph import generators
+import functools as ft
 import networkx as nx
 import numpy as np
-import time
+from tqdm import tqdm
+import typing
+from ..util import Timer
 
 
-def evaluate_durations(generator, max_duration, args):
+def evaluate_durations(generator: typing.Callable, max_duration: float, num_nodes: int,
+                       desc: str = None) -> typing.List[float]:
     durations = []
-    batch_start = time.time()
-    while time.time() - batch_start < max_duration:
-        start = time.time()
-        generator(*args)
-        durations.append(time.time() - start)
+    with Timer() as batch_timer, tqdm(desc=desc) as progress:
+        while batch_timer.duration < max_duration:
+            with Timer() as timer:
+                generator(num_nodes)
+            durations.append(timer.duration)
+            progress.update()
     return durations
+
+
+def patched(func):
+    """
+    Decorator for patching `networkx` functions and types with their `cygraph` equivalents. See
+    :func:`..util.patch_nx_graph` for details.
+    """
+    @ft.wraps(func)
+    def _wrapper(*args, **kwargs):
+        with patch_nx_graph():
+            func(*args, **kwargs)
+    return _wrapper
 
 
 def __main__(args: list[str] = None):
@@ -24,35 +41,40 @@ def __main__(args: list[str] = None):
     args = parser.parse_args(args)
 
     # Sequence of `(nx generator, cygraph generator if available, kwargs)`.
-    configurations = [
-        (nx.duplication_divergence_graph, generators.duplication_divergence_graph, (0.3,)),
-        # This generator is a bit buggy; see the implementation in `generators.pyx`.
-        # (nx.fast_gnp_random_graph, generators.fast_gnp_random_graph, (10 / args.num_nodes,)),
-        (nx.gnp_random_graph, generators.gnp_random_graph, (10 / args.num_nodes,)),
-    ]
+    configurations = {
+        "duplication_mutation_graph": {
+            "networkx": ft.partial(nx.duplication_divergence_graph, p=0.3),
+            "patched": patched(ft.partial(nx.duplication_divergence_graph, p=0.3)),
+            "cygraph": ft.partial(generators.duplication_mutation_graph, deletion_proba=0.7,
+                                  mutation_proba=0),
+        },
+        "gnp_random_graph": {
+            "networkx": ft.partial(nx.gnp_random_graph, p=10 / args.num_nodes),
+            "patched": patched(ft.partial(nx.gnp_random_graph, p=10 / args.num_nodes)),
+            "cygraph": ft.partial(generators.gnp_random_graph, p=10 / args.num_nodes),
+        }
+    }
 
     # Evaluate duration samples.
-    durations_by_generator = {}
-    for nxgenerator, cygenerator, args_ in configurations:
-        args_ = (args.num_nodes,) + args_
-        durations = {"networkx": evaluate_durations(nxgenerator, args.max_duration, args_)}
-        with patch_nx_graph():
-            durations["patched"] = evaluate_durations(nxgenerator, args.max_duration, args_)
-        if cygenerator:
-            durations["cygraph"] = evaluate_durations(cygenerator, args.max_duration, args_)
-        durations_by_generator[nxgenerator.__name__] = durations
+    durations_by_config_and_method = {}
+    for config_key, methods in configurations.items():
+        durations_by_method = {
+            key: evaluate_durations(method, args.max_duration, args.num_nodes,
+                                    desc=f"{config_key}.{key}") for key, method in methods.items()
+        }
+        durations_by_config_and_method[config_key] = durations_by_method
 
         # Report as soon as we have the results.
-        counts = {method: len(values) for method, values in durations.items()}
-        mean_durations = {method: np.mean(values) for method, values in durations.items()}
-        factors = {method: mean_durations["networkx"] / duration for method, duration
-                   in mean_durations.items() if method != "networkx"}
+        counts = {key: len(durations) for key, durations in durations_by_method.items()}
+        mean_durations = {key: np.mean(durations) for key, durations in durations_by_method.items()}
+        factors = {key: mean_durations["networkx"] / mean_duration for key, mean_duration
+                   in mean_durations.items() if key != "networkx"}
 
-        line = "; ".join(f"{method} ({counts[method]} runs): {factor:.3f}x" for method, factor in
+        line = "; ".join(f"{key} ({counts[key]} runs): {factor:.3f}x" for key, factor in
                          factors.items())
-        print(f"{nxgenerator.__name__} -- {line}")
+        print(f"{config_key} -- {line}")
 
-    return durations_by_generator
+    return durations_by_config_and_method
 
 
 if __name__ == "__main__":
