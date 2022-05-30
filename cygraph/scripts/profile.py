@@ -42,11 +42,13 @@ def __main__(args: list[str] = None):
         durations_by_generator[nxgenerator.__name__] = durations
 
         # Report as soon as we have the results.
+        counts = {method: len(values) for method, values in durations.items()}
         mean_durations = {method: np.mean(values) for method, values in durations.items()}
         factors = {method: mean_durations["networkx"] / duration for method, duration
                    in mean_durations.items() if method != "networkx"}
 
-        line = "; ".join(f"{method}: {factor:.3f}x" for method, factor in factors.items())
+        line = "; ".join(f"{method} ({counts[method]} runs): {factor:.3f}x" for method, factor in
+                         factors.items())
         print(f"{nxgenerator.__name__} -- {line}")
 
     return durations_by_generator
