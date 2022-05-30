@@ -29,10 +29,15 @@ import_tests :
 clean :
 	rm -f cygraph/*.cpp cygraph/*.html cygraph/*.so
 
-workspace/profile.prof : cygraph/scripts/profile.py
-	mkdir -p $(dir $@)
-	python -m cProfile -o $@ -m cygraph.scripts.profile --max_duration=3 1000
+CURRENT_BRANCH = $(shell git branch --show-current)
 
-workspace/performance_experiments.txt :
+workspace/profile : workspace/profile-${CURRENT_BRANCH}.prof workspace/profile-${CURRENT_BRANCH}.txt
+
+workspace/profile-${CURRENT_BRANCH}.prof workspace/profile-${CURRENT_BRANCH}.txt : cygraph/scripts/profile.py
+	mkdir -p $(dir $@)
+	python -m cProfile -o workspace/profile-${CURRENT_BRANCH}.prof -m cygraph.scripts.profile \
+		--max_duration=3 1000 > workspace/profile-${CURRENT_BRANCH}.txt
+
+workspace/performance_experiments-${CURRENT_BRANCH}.txt :
 	mkdir -p $(dir $@)
 	python -m cygraph.scripts.performance_experiments --num_repeats=250 > $@
