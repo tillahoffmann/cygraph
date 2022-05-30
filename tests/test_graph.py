@@ -222,6 +222,8 @@ def test_remove_missing_edge(triangle_graph: nx.Graph):
     assert not triangle_graph.has_edge(99, 98)
     with pytest.raises((KeyError, nx.NetworkXError)):
         triangle_graph.remove_edge(99, 98)
+    with pytest.raises((KeyError, nx.NetworkXError)):
+        triangle_graph.remove_edge(0, 99)
     triangle_graph.remove_edges_from([(99, 98)])
 
 
