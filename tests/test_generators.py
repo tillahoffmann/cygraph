@@ -22,7 +22,7 @@ def test_duplication_divergence():
     # generators.fast_gnp_random_graph,
     generators.gnp_random_graph,
 ])
-@pytest.mark.parametrize("n, p", [(10000, 0.001), (10, 0.5)])
+@pytest.mark.parametrize("n, p", [(1000, 0.01), (10, 0.5)])
 def test_x_gnp_random_graph(generator, n, p):
     graph = generator(n, p)
     dist = stats.binom(n * (n - 1) // 2, p)
