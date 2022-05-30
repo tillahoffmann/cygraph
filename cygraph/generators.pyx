@@ -55,33 +55,34 @@ def duplication_divergence_graph(int n, float p, Graph graph = None,
     return graph
 
 
-def fast_gnp_random_graph(int n, float p, Graph graph = None, RandomEngine random_engine = None) \
-        -> Graph:
-    cdef uniform_real_distribution[float] uniform = uniform_real_distribution[float](0, 1)
-    cdef node_t v, w
-    assert_interval("p", p, 0, 1)
-    assert_interval("n", n, 1, None)
-    random_engine = get_random_engine(random_engine)
-
-    if not graph:
-        graph = Graph()
-    for i in range(n):
-        graph.add_node(i)
-
-    lp = math.log1p(-p)
-
-    v = 1
-    w = -1
-    while v < n:
-        # TODO: why does this behaves different from random.random and is sometimes *really* slow?
-        lr = math.log1p(-uniform(random_engine.instance))
-        w = w + 1 + <node_t>math.floor(lr / lp)
-        while w >= v and v < n:
-            w = w - v
-            v = v + 1
-        if v < n:
-            graph.add_edge(v, w)
-    return graph
+# This generator is currently commented out because it behaves strangely (see TODO note below).
+# def fast_gnp_random_graph(int n, float p, Graph graph = None, RandomEngine random_engine = None) \
+#         -> Graph:
+#     cdef uniform_real_distribution[float] uniform = uniform_real_distribution[float](0, 1)
+#     cdef node_t v, w
+#     assert_interval("p", p, 0, 1)
+#     assert_interval("n", n, 1, None)
+#     random_engine = get_random_engine(random_engine)
+#
+#     if not graph:
+#         graph = Graph()
+#     for i in range(n):
+#         graph.add_node(i)
+#
+#     lp = math.log1p(-p)
+#
+#     v = 1
+#     w = -1
+#     while v < n:
+#         # TODO: why does this behaves different from random.random and is sometimes *really* slow?
+#         lr = math.log1p(-uniform(random_engine.instance))
+#         w = w + 1 + <node_t>math.floor(lr / lp)
+#         while w >= v and v < n:
+#             w = w - v
+#             v = v + 1
+#         if v < n:
+#             graph.add_edge(v, w)
+#     return graph
 
 
 def gnp_random_graph(int n, float p, Graph graph = None, RandomEngine random_engine = None):

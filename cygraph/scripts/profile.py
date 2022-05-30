@@ -26,7 +26,8 @@ def __main__(args: list[str] = None):
     # Sequence of `(nx generator, cygraph generator if available, kwargs)`.
     configurations = [
         (nx.duplication_divergence_graph, generators.duplication_divergence_graph, {"p": 0.3}),
-        (nx.fast_gnp_random_graph, generators.fast_gnp_random_graph, {"p": 10 / args.num_nodes}),
+        # This generator is a bit buggy; see the implementation in `generators.pyx`.
+        # (nx.fast_gnp_random_graph, generators.fast_gnp_random_graph, {"p": 10 / args.num_nodes}),
         (nx.gnp_random_graph, generators.gnp_random_graph, {"p": 10 / args.num_nodes}),
     ]
 

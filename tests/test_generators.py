@@ -19,7 +19,7 @@ def test_duplication_divergence():
 
 
 @pytest.mark.parametrize("generator", [
-    generators.fast_gnp_random_graph,
+    # generators.fast_gnp_random_graph,
     generators.gnp_random_graph,
 ])
 @pytest.mark.parametrize("n, p", [(10000, 0.001), (10, 0.5)])
