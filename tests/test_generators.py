@@ -1,4 +1,5 @@
 from cygraph import generators
+import networkx as nx
 import pytest
 from scipy import stats
 
@@ -19,6 +20,7 @@ def test_duplication_divergence(kwargs):
     graph = generators.duplication_divergence_graph(100, **kwargs)
     assert graph.number_of_nodes() == 100
     assert all(k for _, k in graph.degree)
+    assert nx.is_connected(graph)
 
 
 @pytest.mark.parametrize("generator", [

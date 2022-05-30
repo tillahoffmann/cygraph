@@ -1,7 +1,8 @@
 # cython: cdivision = True
 
-from .graph cimport Graph, node_t
-from .libcpp.random cimport bernoulli_distribution, mt19937, random_device, uniform_real_distribution
+from .graph cimport count_t, Graph, node_t, node_list_t
+from .libcpp.random cimport bernoulli_distribution, binomial_distribution, mt19937, random_device, \
+    uniform_int_distribution, uniform_real_distribution
 from libc cimport math
 from libcpp.utility cimport move
 import numbers
@@ -64,10 +65,10 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
 
     Args:
         n: Number of nodes.
-        p: Edge retention probability, i.e. the probability that a duplicated edge is retained. The
-            parameter is denoted :math:`1 - \delta` in `Sole et al. (2002) <Sole2002>`_.
+        p: Probability that a duplicated edge is retained. The parameter is denoted
+            :math:`1 - \delta` in `Sole et al. (2002) <Sole2002>`_.
         beta: Scaled mutation probability such that a random connection between the duplicated node
-            and existings node are created with probability `beta / current_num_nodes`.
+            and existings node are created with probability :math:`\beta / t`.
         graph: Seed graph; defaults to a pair of connected nodes.
         random_engine: See :func:`get_random_engine`.
 
@@ -83,17 +84,20 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
        with probability :math:`\beta / t`.
 
     Note:
-        We use an equivalent but more efficient growth process here. In the second step, for each of
-        the neighbors :math:`j`, we create an edge to :math:`i'` with probability
-        `1 - deletion_proba`. In the third step, we sample the number of additional edges `extra`
-        from a binomial random variable with `num_nodes` trials and probability
-        `mutation_proba / num_nodes`. We then sample connect the new node to `extra` distinct
-        existing nodes.
+        In the third step, we sample the number of additional edges :math:`k` from a binomial random
+        variable with :math:`t` trials and probability :math:`\min\left(1, \beta / t\right)`. We
+        then sample :math:`k` neighbors with replacement and connect them to :math:`t`. The actual
+        number of additional connections may thus be smaller than :math:`k`, especially when the
+        graph is small. This compromise avoids relatively expensive sampling without replacement
+        from the population of nodes.
 
     .. Sole2002: https://doi.org/10.1142/S021952590200047X
     """
     cdef bernoulli_distribution retention_dist = bernoulli_distribution(p)
-    cdef bernoulli_distribution mutation_dist
+    cdef binomial_distribution[count_t] num_additional_neighbors_dist
+    cdef count_t num_additional_neighbors
+    cdef uniform_int_distribution[node_t] random_node_dist
+    cdef node_list_t additional_neighbors
     cdef node_t new_node, random_neighbor, seed_node
     assert_interval("n", n, 2, None)
     assert_interval("p", p, 0, 1)
@@ -107,20 +111,23 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
     while graph.number_of_nodes() < n:
         new_node = graph.number_of_nodes()
         # Choose a random node from current graph to duplicate.
-        seed_node = random_engine.instance() % new_node
-        # Pick another random neighbor if this step is to include a mutation.
-        random_neighbor = -1
-        # Relatively cheap check to avoid constructing `bernoulli_distribution` if we don't need it.
+        random_node_dist = uniform_int_distribution[node_t](0, new_node - 1)
+        seed_node = random_node_dist(random_engine.instance)
+        # Relatively cheap check to avoid constructing distributions if we don't need them.
         if beta > 0:
-            mutation_dist = bernoulli_distribution(min(beta / new_node, 1))
-            if mutation_dist(random_engine.instance):
-                random_neighbor = random_engine.instance() % new_node
+            # Identify nodes connected by random mutation.
+            num_additional_neighbors_dist = binomial_distribution[count_t](new_node,
+                                                                           min(beta / new_node, 1))
+            num_additional_neighbors = num_additional_neighbors_dist(random_engine.instance)
+            additional_neighbors.clear()
+            for _ in range(num_additional_neighbors):
+                additional_neighbors.push_back(random_node_dist(random_engine.instance))
         # Duplicate links independently with the given probability.
         for neighbor in graph._adjacency_map[seed_node]:
             if retention_dist(random_engine.instance):
                 graph.add_edge(new_node, neighbor)
 
-        if random_neighbor >= 0:
+        for neighbor in additional_neighbors:
             graph.add_edge(new_node, neighbor)
     return graph
 
