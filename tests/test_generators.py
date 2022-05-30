@@ -23,6 +23,13 @@ def test_duplication_divergence(args):
     assert nx.is_connected(graph)
 
 
+def test_duplication_complementation():
+    graph = generators.duplication_complementation_graph(100, .5, .2)
+    assert graph.number_of_nodes() == 100
+    assert all(k for _, k in graph.degree)
+    assert nx.is_connected(graph)
+
+
 @pytest.mark.parametrize("generator", [
     # generators.fast_gnp_random_graph,
     generators.gnp_random_graph,

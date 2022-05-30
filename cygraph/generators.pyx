@@ -133,6 +133,84 @@ def duplication_divergence_graph(n: int, retention_proba: float, mutation_proba:
     return graph
 
 
+def duplication_complementation_graph(n: int, deletion_proba: float, interaction_proba,
+                                      graph: Graph = None, random_engine: RandomEngine = None) \
+        -> Graph:
+    r""""
+    Duplication divergence graph with complementation as described by
+    `Vazquez et al. (2003) <Vazquez2003>`_.
+
+    Args:
+        n: Number of nodes.
+        deletion_proba: Probability that a duplicated or original edge is deleted. The parameter is
+            denoted :math:`q` in `Vazquez et al. (2003) <Vazquez2003>`_.
+        interaction_proba: Probability that the original and duplicated node are connected.
+        graph: Seed graph; defaults to a pair of connected nodes.
+        random_engine: See :func:`get_random_engine`.
+
+    The growth process proceeds in four stages at each step :math:`t`:
+
+    1. A node :math:`i` is chosen at random and duplicated to obtain a new node :math:`t`, including
+       its connections.
+    2. For each neighbors :math:`j`, we choose one of the edges :math:`(i, j)` and :math:`(t, j)`
+       and remove it with probability `deletion_proba`. I.e., we remove at most one of the edges.
+    3. The nodes :math:`i` and :math:`t` are connected with probability `interaction_proba`.
+    4. Each of :math:`i` and :math:`t` are discarded if they do not have any connections. This
+       ensures the graph remains connected.
+
+    .. Vazquez2003: https://doi.org/10.1142/S021952590200047X
+    """
+    # Whether to delete one of the connections.
+    cdef bernoulli_distribution deletion_dist = bernoulli_distribution(deletion_proba)
+    # Whether to delete the connection with the original node.
+    cdef bernoulli_distribution original_dist = bernoulli_distribution(0.5)
+    # Whether to create a connection between the original and new node.
+    cdef bernoulli_distribution interaction_dist = bernoulli_distribution(interaction_proba)
+    cdef uniform_int_distribution[node_t] random_node_dist
+    cdef node_t new_node, seed_node
+    assert_interval("n", n, 2, None)
+    assert_interval("deletion_proba", deletion_proba, 0, 1)
+    assert_interval("interaction_proba", interaction_proba, 0, 1)
+    random_engine = get_random_engine(random_engine)
+
+    if not graph:
+        graph = Graph()
+        graph.add_edge(0, 1)
+
+    new_node = graph.number_of_nodes()
+    while graph.number_of_nodes() < n:
+        # Choose a random node from the current graph to duplicate. We may need to sample multiple
+        # times if one of the nodes was deleted due to being disconnected. This may be costly if the
+        # deletion probability is high.
+        random_node_dist = uniform_int_distribution[node_t](0, new_node - 1)
+        while True:
+            seed_node = random_node_dist(random_engine.instance)
+            if graph.has_node(seed_node):
+                break
+
+        # Duplicate edges and deal with deletion.
+        for neighbor in graph._adjacency_map[seed_node]:
+            if deletion_dist(random_engine.instance) and original_dist(random_engine.instance):
+                graph.remove_edge(seed_node, neighbor)
+                graph.add_edge(new_node, neighbor)
+            else:
+                graph.add_edge(new_node, neighbor)
+
+        # Add interaction.
+        if interaction_dist(random_engine.instance):
+            graph.add_edge(seed_node, new_node)
+
+        # Advance the new node label if we made any connections.
+        if graph.has_node(new_node):
+            new_node += 1
+
+        # Delete the seed node if it became disconnected.
+        if not graph._adjacency_map[seed_node].size():
+            graph.remove_node(seed_node)
+
+    return graph
+
+
 # This generator is currently commented out because it behaves strangely (see TODO note below).
 # def fast_gnp_random_graph(int n, float p, Graph graph = None, RandomEngine random_engine = None) \
 #         -> Graph:
