@@ -1,4 +1,6 @@
+import contextlib
 import numbers
+from unittest import mock
 
 
 def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high: numbers.Number,
@@ -28,3 +30,14 @@ def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high:
         raise ValueError(f"{name} must belong to the interval {'[' if inclusive_low else '('}"
                          f"{'-inf' if low is None else low}, {'inf' if high is None else high}"
                          f"{']' if inclusive_high else ')'} but got {value}")
+
+@contextlib.contextmanager
+def patch_nx_graph():
+    """
+    Context for patching :class:`networkx.Graph` and :func:`networkx.empty_graph` so they return
+    :class:`Graph` instances.
+    """
+    from .graph import Graph
+    with mock.patch("networkx.empty_graph.__defaults__", (0, None, Graph)), \
+            mock.patch("networkx.Graph", Graph):
+        yield

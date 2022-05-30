@@ -113,7 +113,7 @@ def test_networkx_generators(generator: typing.Callable, kwargs: dict):
     if generator is nx.empty_graph:
         graph2 = patched_empty_graph(**kwargs)
     else:
-        with cygraph.graph.patch_nx_graph():
+        with cygraph.util.patch_nx_graph():
             graph2 = generator(**kwargs)
     assert isinstance(graph1, nx.Graph)
     assert isinstance(graph2, cygraph.Graph)
