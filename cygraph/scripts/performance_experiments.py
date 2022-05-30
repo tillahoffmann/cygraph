@@ -20,7 +20,7 @@ class Timer:
     @property
     def duration(self):
         if self.start is None or self.end is None:
-            raise ValueError("timer has not yet been used or has not finished")
+            raise ValueError("timer has not yet been used or has not finished")  # pragma: no cover
         return self.end - self.start
 
 
@@ -59,6 +59,8 @@ def __main__(args: list[str] = None):
 
     for key, durations in results.items():
         print(f"{key}: {1e3 * np.mean(durations):.3f} ms")
+
+    return results
 
 
 if __name__ == "__main__":
