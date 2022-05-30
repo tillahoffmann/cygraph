@@ -1,5 +1,7 @@
 from cython.operator cimport dereference, preincrement
 import numbers
+import typing
+
 
 IF DEBUG_LOGGING:
     import logging
@@ -7,11 +9,18 @@ IF DEBUG_LOGGING:
 
 
 cdef class Graph:
+    """
+    Undirected, unweighted, unattributed graph that is compatible with :class:`networkx.Graph` by
+    duck-typing. Detailed descriptions of all methods can be found in the networkx documentation.
+    """
     def __init__(self):
         self._property_cache = {}
 
     @property
     def name(self):
+        """
+        str: Name of the graph (mostly for compatibility with networkx).
+        """
         return self._name
 
     @name.setter
@@ -27,43 +36,73 @@ cdef class Graph:
 
     @property
     def nodes(self):
+        """
+        NodeView: View of nodes, supporting relatively fast iteration.
+        """
         return self._get_view("nodes", NodeView)
 
     @property
-    def edges(self):
+    def edges(self) -> EdgeView:
+        """
+        EdgeView: View of connectivity as an edge list.
+        """
         return self._get_view("edges", EdgeView)
 
     @property
     def degree(self):
+        """
+        DegreeView: View of node degrees, supporting indexing by node label.
+        """
         return self._get_view("degree", DegreeView)
 
     @property
-    def neighbors(self):
+    def neighbors(self) -> NeighborView:
+        """
+        NeighborView: View of node neighbors, supporting indexing by node label.
+        """
         return self._get_view("neighbors", NeighborView)
 
     @property
     def adj(self):
+        """
+        typing.Dict[int, typing.Set[int]]: Adjacency map, mapping nodes to sets of neighbors.
+        """
         return self._adjacency_map
 
-    def size(self):
+    def size(self) -> int:
+        """
+        Returns the number of edges. :meth:`number_of_edges` is preferred.
+        """
         return self.number_of_edges()
 
     def __len__(self):
         return self.number_of_nodes()
 
     def __iter__(self):
-        return NodeIterator(self)
+        return _NodeIterator(self)
 
-    def __getitem__(self, node):
+    def __getitem__(self, node) -> typing.Set[int]:
         return self.neighbors(node)
 
     cpdef int add_node(self, node_t node):
+        """
+        Add a single node.
+
+        Args:
+            node: Node to add.
+        """
         # Using [node] implicitly creates the node, but we don't know whether it existed before.
         self._adjacency_map[node]
         IF DEBUG_LOGGING:
             LOGGER.info("added node %d", node)
 
     cpdef int add_nodes_from(self, node_set_t nodes):
+        """
+        Add multiple nodes.
+
+        Args:
+            nodes: Container of nodes to add.
+        """
         cdef node_t node
         for node in nodes:
             self.add_node(node)
@@ -78,12 +117,34 @@ cdef class Graph:
         return True
 
     cpdef int remove_node(self, node_t node) except -1:
+        """
+        Remove `node` from the graph.
+
+        Args:
+            node: Node to remove.
+
+        Raises:
+            KeyError: If the node does not exist.
+        """
         if not self._remove_node(node):
             raise KeyError(f"node {node} does not exist")
         IF DEBUG_LOGGING:
             LOGGER.info("removed node %d", node)
 
     cpdef int remove_nodes_from(self, node_set_t nodes):
+        """
+        Remove multiple `nodes`.
+
+        Args:
+            nodes: Nodes to remove.
+
+        Returns:
+            num_removed: Number of nodes removed.
+
+        Note:
+            In contrast to :meth:`remove_node`, this method does not raise a :class:`KeyError` if
+            `nodes` contains a node that does not exist.
+        """
         cdef count_t num_removed = 0
         cdef node_t node
         for node in nodes:
@@ -91,15 +152,33 @@ cdef class Graph:
         return num_removed
 
     cpdef int has_node(self, node_t node):
+        """
+        Returns whether `node` exists.
+
+        Args:
+            node: Node to check.
+
+        Returns:
+            exists: `True` if `node` exists, `False` otherwise.
+        """
         return self._adjacency_map.find(node) != self._adjacency_map.end()
 
     cpdef int number_of_nodes(self):
+        """
+        Returns the number of nodes.
+        """
         return self._adjacency_map.size()
 
     cpdef int is_directed(self):
+        """
+        Returns `False` because directed graphs are not supported.
+        """
         return False
 
     cpdef int is_multigraph(self):
+        """
+        Returns `False` because multigraphs are not supported.
+        """
         return False
 
     cdef int _add_directed_edge(self, node_t source, node_t target):
@@ -112,11 +191,30 @@ cdef class Graph:
         return dereference(it).second.erase(target)
 
     cpdef int add_edge(self, node_t u, node_t v):
+        """
+        Add the edge `(u, v)`.
+
+        Args:
+            u: First node in the edge pair.
+            v: Second node in the edge pair.
+
+        Returns:
+            added: `True` if `(u, v)` was added, `False` if it already existed.
+        """
         IF DEBUG_LOGGING:
             LOGGER.info("added edge (%d, %d)", u, v)
         return self._add_directed_edge(u, v) and self._add_directed_edge(v, u)
 
     cpdef int add_edges_from(self, edge_list_t edges):
+        """
+        Add multiple edges.
+
+        Args:
+            edges: Container of pairs of nodes, constituting an edge to be added each.
+
+        Returns:
+            num_added: Number of newly added edges.
+        """
         cdef count_t num_added = 0
         for edge in edges:
             num_added += self.add_edge(edge.first, edge.second)
@@ -126,30 +224,66 @@ cdef class Graph:
         return self._remove_directed_edge(u, v) and self._remove_directed_edge(v, u)
 
     cpdef int remove_edge(self, node_t u, node_t v) except -1:
+        """
+        Remove the edge `(u, v)`.
+
+        Args:
+            u: First node in the edge pair.
+            v: Second node in the edge pair.
+
+        Raises:
+            KeyError: If the edge between `u` and `v` does not exist.
+        """
         if not self._remove_edge(u, v):
             raise KeyError(f"edge {(u, v)} does not exist")
         IF DEBUG_LOGGING:
             LOGGER.info("removed edge (%d, %d)", u, v)
 
     cpdef int remove_edges_from(self, edge_list_t edges):
+        """
+        Remove multiple edges.
+
+        Args:
+            edges: Container of pairs of nodes, constituting an edge to be removed each.
+
+        Returns:
+            num_removed: Number of removed edges.
+
+        Note:
+            In contrast to :meth:`remove_edge`, this method does not raise a :class:`KeyError` if
+            `edges` contains an edge that does not exist.
+        """
         cdef count_t num_removed = 0
         for edge in edges:
             num_removed += self._remove_edge(edge.first, edge.second)
 
     cpdef int has_edge(self, node_t u, node_t v):
+        """
+        Returns whether the edge `(u, v)` exists.
+
+        Args:
+            u: First node in the edge pair.
+            v: Second node in the edge pair.
+
+        Returns:
+            exists: `True` if `(u, v)` exists, `False` otherwise.
+        """
         it = self._adjacency_map.find(u)
         if it == self._adjacency_map.end():
             return False
         return dereference(it).second.find(v) != dereference(it).second.end()
 
     cpdef int number_of_edges(self):
+        """
+        Returns the number of edges.
+        """
         cdef int num_edges = 0
         for item in self._adjacency_map:
             num_edges += item.second.size()
         return num_edges // 2
 
 
-cdef class View:
+cdef class _View:
     """
     Base class for graph views to expose state to python.
     """
@@ -159,9 +293,9 @@ cdef class View:
         self.graph = graph
 
 
-cdef class NodeView(View):
+cdef class NodeView(_View):
     """
-    View yielding sorted nodes.
+    Node view, yielding nodes.
     """
     def __call__(self):
         return self
@@ -170,7 +304,7 @@ cdef class NodeView(View):
         return iter(self.graph)
 
 
-cdef class NodeIterator:
+cdef class _NodeIterator:
     """
     Dedicated iterator for nodes (see https://stackoverflow.com/q/72426351/1150961).
     """
@@ -190,7 +324,7 @@ cdef class NodeIterator:
         return value
 
 
-cdef class EdgeView(View):
+cdef class EdgeView(_View):
     """
     Edge view yielding tuples of nodes.
     """
@@ -204,7 +338,7 @@ cdef class EdgeView(View):
                     yield (node, neighbor)
 
 
-cdef class DegreeView(View):
+cdef class DegreeView(_View):
     """
     Degree view yielding sorted tuples `(node, degree)`. It supports indexing.
     """
@@ -225,7 +359,10 @@ cdef class DegreeView(View):
             return self[node]
 
 
-cdef class NeighborView(View):
+cdef class NeighborView(_View):
+    """
+    Neighbor view exposing neighbors using the `__call__` interface.
+    """
     def __call__(self, node: node_t):
         it = self.graph._adjacency_map.find(node)
         if it != self.graph._adjacency_map.end():

@@ -7,7 +7,7 @@ from unittest import mock
 def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high: numbers.Number,
                     inclusive_low: bool = True, inclusive_high: bool = True) -> None:
     """
-    Assert that a value falls in a certain interval and raise a `ValueError` if not.
+    Assert that a value falls in a certain interval.
 
     Args:
         name: Name of the variable for the error message.
