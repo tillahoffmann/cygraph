@@ -6,12 +6,12 @@ import numpy as np
 import time
 
 
-def evaluate_durations(generator, max_duration, kwargs):
+def evaluate_durations(generator, max_duration, args):
     durations = []
     batch_start = time.time()
     while time.time() - batch_start < max_duration:
         start = time.time()
-        generator(**kwargs)
+        generator(*args)
         durations.append(time.time() - start)
     return durations
 
@@ -25,21 +25,21 @@ def __main__(args: list[str] = None):
 
     # Sequence of `(nx generator, cygraph generator if available, kwargs)`.
     configurations = [
-        (nx.duplication_divergence_graph, generators.duplication_divergence_graph, {"p": 0.3}),
+        (nx.duplication_divergence_graph, generators.duplication_divergence_graph, (0.3,)),
         # This generator is a bit buggy; see the implementation in `generators.pyx`.
-        # (nx.fast_gnp_random_graph, generators.fast_gnp_random_graph, {"p": 10 / args.num_nodes}),
-        (nx.gnp_random_graph, generators.gnp_random_graph, {"p": 10 / args.num_nodes}),
+        # (nx.fast_gnp_random_graph, generators.fast_gnp_random_graph, (10 / args.num_nodes,)),
+        (nx.gnp_random_graph, generators.gnp_random_graph, (10 / args.num_nodes,)),
     ]
 
     # Evaluate duration samples.
     durations_by_generator = {}
-    for nxgenerator, cygenerator, kwargs in configurations:
-        kwargs = kwargs | {"n": args.num_nodes}
-        durations = {"networkx": evaluate_durations(nxgenerator, args.max_duration, kwargs)}
+    for nxgenerator, cygenerator, args_ in configurations:
+        args_ = (args.num_nodes,) + args_
+        durations = {"networkx": evaluate_durations(nxgenerator, args.max_duration, args_)}
         with patch_nx_graph():
-            durations["patched"] = evaluate_durations(nxgenerator, args.max_duration, kwargs)
+            durations["patched"] = evaluate_durations(nxgenerator, args.max_duration, args_)
         if cygenerator:
-            durations["cygraph"] = evaluate_durations(cygenerator, args.max_duration, kwargs)
+            durations["cygraph"] = evaluate_durations(cygenerator, args.max_duration, args_)
         durations_by_generator[nxgenerator.__name__] = durations
 
         # Report as soon as we have the results.

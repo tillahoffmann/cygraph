@@ -15,9 +15,9 @@ def test_random_engine():
         generators.get_random_engine("invalid value")
 
 
-@pytest.mark.parametrize("kwargs", [{"p": .3}, {"p": .3, "beta": .4}])
-def test_duplication_divergence(kwargs):
-    graph = generators.duplication_divergence_graph(100, **kwargs)
+@pytest.mark.parametrize("args", [(.3,), (.3, .4)])
+def test_duplication_divergence(args):
+    graph = generators.duplication_divergence_graph(100, *args)
     assert graph.number_of_nodes() == 100
     assert all(k for _, k in graph.degree)
     assert nx.is_connected(graph)

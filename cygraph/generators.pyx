@@ -56,8 +56,8 @@ cpdef RandomEngine get_random_engine(arg: typing.Optional[typing.Union[int, Rand
         raise ValueError(arg)
 
 
-def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph = None,
-                                 random_engine: RandomEngine = None) -> Graph:
+def duplication_divergence_graph(n: int, retention_proba: float, mutation_proba: float = 0,
+                                 graph: Graph = None, random_engine: RandomEngine = None) -> Graph:
     r"""
     Duplication divergence graph with random mutations as described by
     `Sole et al. (2002) <Sole2002>`_. Equivalent to
@@ -65,10 +65,11 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
 
     Args:
         n: Number of nodes.
-        p: Probability that a duplicated edge is retained. The parameter is denoted
-            :math:`1 - \delta` in `Sole et al. (2002) <Sole2002>`_.
-        beta: Scaled mutation probability such that a random connection between the duplicated node
-            and existings node are created with probability :math:`\beta / t`.
+        retention_proba: Probability that an edge is duplicated. The parameter is denoted
+            :math:`1 - \delta` in `Sole et al. (2002) <Sole2002>`_, where :math:`\delta` is the edge
+            deletion probability.
+        mutation_proba: Scaled mutation probability such that a random connection between the new
+            node and existings node are created with probability :math:`\beta / t`.
         graph: Seed graph; defaults to a pair of connected nodes.
         random_engine: See :func:`get_random_engine`.
 
@@ -79,13 +80,13 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
 
     1. A node :math:`i` is chosen at random and duplicated to obtain a new node :math:`t`.
     2. For each neighbor :math:`j` of :math:`i`, a connection to the new node :math:`t` is added
-       with retention probability :math:`p`.
+       with probability `retention_proba`.
     3. Connections between the new node :math:`t` and any other nodes in the network are created
-       with probability :math:`\beta / t`.
+       with probability :math:`\beta / t`, where :math:`\beta` is `mutation_proba`.
 
     Note:
         In the third step, we sample the number of additional edges :math:`k` from a binomial random
-        variable with :math:`t` trials and probability :math:`\min\left(1, \beta / t\right)`. We
+        variable with :math:`t - 1` trials and probability :math:`\min\left(1, \beta / t\right)`. We
         then sample :math:`k` neighbors with replacement and connect them to :math:`t`. The actual
         number of additional connections may thus be smaller than :math:`k`, especially when the
         graph is small. This compromise avoids relatively expensive sampling without replacement
@@ -93,15 +94,15 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
 
     .. Sole2002: https://doi.org/10.1142/S021952590200047X
     """
-    cdef bernoulli_distribution retention_dist = bernoulli_distribution(p)
+    cdef bernoulli_distribution retention_dist = bernoulli_distribution(retention_proba)
     cdef binomial_distribution[count_t] num_additional_neighbors_dist
     cdef count_t num_additional_neighbors
     cdef uniform_int_distribution[node_t] random_node_dist
     cdef node_list_t additional_neighbors
     cdef node_t new_node, random_neighbor, seed_node
     assert_interval("n", n, 2, None)
-    assert_interval("p", p, 0, 1)
-    assert_interval("beta", beta, 0, None)
+    assert_interval("retention_proba", retention_proba, 0, 1)
+    assert_interval("mutation_proba", mutation_proba, 0, None)
     random_engine = get_random_engine(random_engine)
 
     if not graph:
@@ -114,10 +115,10 @@ def duplication_divergence_graph(n: int, p: float, beta: float = 0, graph: Graph
         random_node_dist = uniform_int_distribution[node_t](0, new_node - 1)
         seed_node = random_node_dist(random_engine.instance)
         # Relatively cheap check to avoid constructing distributions if we don't need them.
-        if beta > 0:
+        if mutation_proba > 0:
             # Identify nodes connected by random mutation.
-            num_additional_neighbors_dist = binomial_distribution[count_t](new_node,
-                                                                           min(beta / new_node, 1))
+            num_additional_neighbors_dist = binomial_distribution[count_t](
+                new_node - 1, min(mutation_proba / new_node, 1))
             num_additional_neighbors = num_additional_neighbors_dist(random_engine.instance)
             additional_neighbors.clear()
             for _ in range(num_additional_neighbors):
