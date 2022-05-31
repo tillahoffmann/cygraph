@@ -3,6 +3,7 @@ import networkx as nx
 import pytest
 from scipy import stats
 import typing
+from unittest import mock
 
 
 def test_random_engine():
@@ -14,6 +15,14 @@ def test_random_engine():
     assert generators.get_random_engine(engine) is engine
     with pytest.raises(ValueError):
         generators.get_random_engine("invalid value")
+
+    # Explicitly test with and without environment variables.
+    with mock.patch("os.environ.get", return_value=None):
+        # Just test we can create it and check coverage after.
+        generators.RandomEngine()
+    with mock.patch("os.environ.get", return_value="3"):
+        engine = generators.RandomEngine()
+        assert engine() == 2365658986
 
 
 @pytest.mark.parametrize("random_engine", [None, 17, generators.get_random_engine(9)])
