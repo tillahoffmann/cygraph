@@ -14,8 +14,8 @@ def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high:
         value: Value to check.
         low: Lower limit of the interval.
         high: Upper limit of the interval.
-        inclusive_left: Whether the lower limit of the interval is inclusive.
-        inclusive_right: Whether the upper limit of the interval is inclusive.
+        inclusive_low: Whether the lower limit of the interval is inclusive.
+        inclusive_high: Whether the upper limit of the interval is inclusive.
 
     Raises:
         ValueError: If the value does not fall in the interval.
