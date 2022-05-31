@@ -328,8 +328,10 @@ cdef class EdgeView(_View):
     """
     Edge view yielding tuples of nodes.
     """
-    def __call__(self):
-        return self
+    def __call__(self, nbunch=None, data=False, default=None):
+        if nbunch is None and data is False:
+            return self
+        raise NotImplementedError
 
     def __iter__(self):
         for node in sorted(self.graph._adjacency_map):
