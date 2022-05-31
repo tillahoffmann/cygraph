@@ -9,6 +9,7 @@ tests :
 	pytest -v --cov=cygraph --cov-fail-under=100 --cov-report=term-missing --cov-report=html
 
 docs :
+	rm -rf docs/_build
 	sphinx-build . docs/_build
 
 doctests :
