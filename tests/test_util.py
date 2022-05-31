@@ -1,3 +1,4 @@
+from cygraph import generators
 from cygraph import util
 import pytest
 
@@ -21,3 +22,7 @@ def test_assert_interval(fail, args):
             util.assert_interval("var", *args)
     else:
         util.assert_interval("var", *args)
+
+
+def test_plot_graph():
+    util.plot_graph(generators.gnp_random_graph(10, 0.1))

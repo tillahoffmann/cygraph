@@ -2,6 +2,30 @@ import contextlib
 import numbers
 import time
 from unittest import mock
+from .graph import Graph
+
+
+def plot_graph(graph: Graph, seed: int = 0) -> None:
+    """
+    Plot a graph.
+
+    Args:
+        graph: Graph to plot.
+        seed: Random number generator seed for the spring layout.
+    """
+    from matplotlib import pyplot as plt
+    import networkx as nx
+
+    fig, ax = plt.subplots()
+    # Explicitly convert to networkx graph because `spring_layout` implicitly depends on data.
+    graph = nx.Graph(graph.adj)
+    pos = nx.spring_layout(graph, seed=seed)
+    nx.draw_networkx_edges(graph, pos, edge_color='gray')
+    nx.draw_networkx_nodes(graph, pos, node_color='#7fbde9', edgecolors='C0')
+    nx.draw_networkx_labels(graph, pos)
+    ax.set_aspect('equal')
+    ax.set_axis_off()
+    fig.tight_layout()
 
 
 def assert_interval(name: str, value: numbers.Number, low: numbers.Number, high: numbers.Number,
