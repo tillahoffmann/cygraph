@@ -60,18 +60,15 @@ cpdef RandomEngine get_random_engine(arg: typing.Optional[typing.Union[int, Rand
 def duplication_mutation_graph(n: int, deletion_proba: float, mutation_proba: float = 0,
                                  graph: Graph = None, random_engine: RandomEngine = None) -> Graph:
     r"""
-    Duplication divergence graph with random mutations as described by
-    `Sole et al. (2002) <Sole2002>`_. Equivalent to
-    :func:`networkx.generators.duplication.duplication_divergence_graph` if `deletion_proba = p` and
-    `mutation_proba = 0`.
+    Duplication divergence graph with random mutations as described by [Sole2002]_.
 
     Args:
         n: Number of nodes.
         deletion_proba: Probability that a duplicated edge is deleted (:math:`\delta` in
-            `Sole et al. (2002) <Sole2002>`_).
-        mutation_proba: Scaled mutation probability (:math:`\beta` in
-            `Sole et al. (2002) <Sole2002>`_) such that connections between the new node and
-            existings nodes are created with probability :math:`\min\left(1, \beta / t\right)`.
+            [Sole2002]_).
+        mutation_proba: Scaled mutation probability (:math:`\beta` in [Sole2002]_) such that
+            connections between the new node and existings nodes are created with probability
+            :math:`\min\left(1, \beta / t\right)`.
         graph: Seed graph; defaults to a pair of connected nodes.
         random_engine: See :func:`get_random_engine`.
 
@@ -85,8 +82,10 @@ def duplication_mutation_graph(n: int, deletion_proba: float, mutation_proba: fl
        with probability :math:`1 - \delta`.
     3. Connections between the new node :math:`t` and any other nodes in the network are created
        with probability :math:`\min\left(1, \beta / t\right)`.
-    4. Discard the new node :math:`t` if it does not have any edges.  This ensures the graph remains
-       connected.
+    4. Discard the new node :math:`t` if it does not have any edges. This ensures the graph remains
+       connected and is adapted from [Ispolatov2005]_. Indeed, setting :math:`\beta = 0` reduces to
+       Ispolatov's model and is equivalent to
+       :func:`networkx.generators.duplication.duplication_divergence_graph`.
 
     Note:
         In the third step, we sample the number of additional edges :math:`k` from a binomial random
@@ -96,7 +95,12 @@ def duplication_mutation_graph(n: int, deletion_proba: float, mutation_proba: fl
         graph is small. This compromise avoids relatively expensive sampling without replacement
         from the population of nodes.
 
-    .. Sole2002: https://doi.org/10.1142/S021952590200047X
+    .. [Ispolatov2005] I. Ispolatov, P. L. Krapivsky, and A. Yuryev. Duplication-divergence model of
+       protein interaction network. *Phys. Rev. E*, 71(6):061911, 2005.
+       https://doi.org/10.1103/PhysRevE.71.061911
+    .. [Sole2002] R. V. Sol ́e, R. Pastor-Satorras, E. Smith, and T. B. Kepler. A model of
+       large-scale proteome evolution. Adv. Complex Syst., 5(1):43--54, 2002.
+       https://doi.org/10.1142/S021952590200047X
     """
     cdef bernoulli_distribution deletion_dist = bernoulli_distribution(deletion_proba)
     cdef binomial_distribution[count_t] num_additional_neighbors_dist
@@ -105,7 +109,7 @@ def duplication_mutation_graph(n: int, deletion_proba: float, mutation_proba: fl
     cdef node_list_t additional_neighbors
     cdef node_t new_node, random_neighbor, seed_node
     assert_interval("n", n, 2, None)
-    assert_interval("deletion_proba", deletion_proba, 0, 1)
+    assert_interval("deletion_proba", deletion_proba, 0, 1, inclusive_high=False)
     assert_interval("mutation_proba", mutation_proba, 0, None)
     random_engine = get_random_engine(random_engine)
 
@@ -141,15 +145,14 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
                                       graph: Graph = None, random_engine: RandomEngine = None) \
         -> Graph:
     r""""
-    Duplication divergence graph with complementation as described by
-    `Vazquez et al. (2003) <Vazquez2003>`_.
+    Duplication divergence graph with complementation as described by [Vazquez2003]_.
 
     Args:
         n: Number of nodes.
         deletion_proba: Probability that a duplicated or original edge is deleted (:math:`q` in
-            `Vazquez et al. (2003) <Vazquez2003>`_).
+            [Vazquez2003]_).
         interaction_proba: Probability that the original and duplicated node are connected
-            (:math:`p` in `Vazquez et al. (2003) <Vazquez2003>`_)
+            (:math:`p` in [Vazquez2003]_)
         graph: Seed graph; defaults to a pair of connected nodes.
         random_engine: See :func:`get_random_engine`.
 
@@ -161,9 +164,15 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
        and remove it with probability `deletion_proba`. I.e., we remove at most one of the edges.
     3. The nodes :math:`i` and :math:`t` are connected with probability `interaction_proba`.
     4. Each of :math:`i` and :math:`t` are discarded if they do not have any connections. This
-       ensures the graph remains connected.
+       ensures the graph remains connected. This strategy is adpated from [Ispolatov2005]_ who
+       considered a simpler model without edge deletion. See :func:`duplication_mutation_graph` for
+       further details.
 
-    .. Vazquez2003: https://doi.org/10.1142/S021952590200047X
+    .. [Ispolatov2005] I. Ispolatov, P. L. Krapivsky, and A. Yuryev. Duplication-divergence model of
+       protein interaction network. *Phys. Rev. E*, 71(6):061911, 2005.
+       https://doi.org/10.1103/PhysRevE.71.061911
+    .. [Vazquez2003] A. Vazquez, A. Flammini, A. Maritan, and A. Vespignani. Modeling of protein
+       interaction networks. *Complexus*, 1(1):38--44, 2003. https://doi.org/10.1159/000067642
     """
     # Whether to delete one of the connections.
     cdef bernoulli_distribution deletion_dist = bernoulli_distribution(deletion_proba)
@@ -174,7 +183,7 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
     cdef uniform_int_distribution[node_t] random_node_dist
     cdef node_t new_node, seed_node
     assert_interval("n", n, 2, None)
-    assert_interval("deletion_proba", deletion_proba, 0, 1)
+    assert_interval("deletion_proba", deletion_proba, 0, 1, inclusive_high=False)
     assert_interval("interaction_proba", interaction_proba, 0, 1)
     random_engine = get_random_engine(random_engine)
 
