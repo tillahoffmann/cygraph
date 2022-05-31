@@ -270,3 +270,11 @@ def test_debug_logging_add_remove_edge(caplog: pytest.LogCaptureFixture):
         graph.remove_edge(0, 7)
     assert "added edge (0, 7)" in caplog.text
     assert "removed edge (0, 7)" in caplog.text
+
+
+def test_complex_edge_view():
+    graph = cygraph.Graph()
+    with pytest.raises(NotImplementedError):
+        graph.edges(nbunch=[0])
+    with pytest.raises(NotImplementedError):
+        graph.edges(data=True)
