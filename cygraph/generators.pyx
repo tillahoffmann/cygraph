@@ -292,9 +292,8 @@ def gnp_random_graph(int n, p: float, graph: Graph = None, random_engine: Random
 def redirection_graph(n: count_t, p: float, m: count_t, graph: Graph = None,
                       random_engine: RandomEngine = None) -> Graph:
     """
-    Redirection graph obtained by selecting to random nodes and probabilistically redirecting to
-    their neighbors before forming a connection. Equivalent to
-    :func:`networkx.generators.random_graphs.gnr_graph` when :math:`m = 1`.
+    Redirection graph obtained by selecting random nodes and probabilistically redirecting to their
+    neighbors before forming a connection.
 
     Args:
         n: Number of nodes.
@@ -310,6 +309,12 @@ def redirection_graph(n: count_t, p: float, m: count_t, graph: Graph = None,
         For performance reasons, we sample both candidate nodes (before possible redirection) and
         nodes after redirection with replacement. The realized number of connections for a new node
         may thus be less than :math:`m`.
+
+        This generator is equivalent to the model proposed by [Krapivsky2001]_ implemented by
+        :func:`networkx.generators.random_graphs.gnr_graph` if :math:`m = 1`.
+
+    .. [Krapivsky2001] P. L. Krapivsky and S. Redner. Organization of growing random networks.
+       *Phys. Rev. E*, 63(6):066123, 2001. https://doi.org/10.1103/PhysRevE.63.066123
     """
     cdef uniform_int_distribution[node_t] random_node_dist
     cdef bernoulli_distribution redirection_dist = bernoulli_distribution(p)
