@@ -16,16 +16,20 @@ def test_random_engine():
         generators.get_random_engine("invalid value")
 
 
+@pytest.mark.parametrize("random_engine", [None, 17, generators.get_random_engine(9)])
 @pytest.mark.parametrize("num_nodes", [100, 1000])
 @pytest.mark.parametrize("generator, kwargs, connected", [
     (generators.duplication_mutation_graph, {"deletion_proba": 0.5, "mutation_proba": 0.5}, True),
     (generators.duplication_complementation_graph,
      {"deletion_proba": 0.5, "interaction_proba": 0.5}, True),
+    (generators.duplication_complementation_graph,
+     {"deletion_proba": 0.9, "interaction_proba": 0.1}, True),
     (generators.gnp_random_graph, {"p": 0.9}, True),
     (generators.gnp_random_graph, {"p": 1e-3}, False),
 ])
-def test_generators(num_nodes: int, generator: typing.Callable, kwargs: dict, connected: bool):
-    graph = generator(num_nodes, **kwargs)
+def test_generators(random_engine: int, num_nodes: int, generator: typing.Callable, kwargs: dict,
+                    connected: bool):
+    graph = generator(num_nodes, **kwargs, random_engine=random_engine)
     assert graph.number_of_nodes() == num_nodes
     if connected is not None:
         assert nx.is_connected(graph) == connected
