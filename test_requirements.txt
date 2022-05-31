@@ -31,7 +31,9 @@ imagesize==1.2.0
 iniconfig==1.1.1
     # via pytest
 jinja2==3.0.2
-    # via sphinx
+    # via
+    #   numpydoc
+    #   sphinx
 markupsafe==2.0.1
     # via jinja2
 mccabe==0.6.1
@@ -40,6 +42,8 @@ networkx==2.8.2
     # via cygraph
 numpy==1.22.4
     # via scipy
+numpydoc==1.3.1
+    # via cygraph
 packaging==21.0
     # via
     #   pytest
@@ -71,7 +75,9 @@ scipy==1.8.1
 snowballstemmer==2.1.0
     # via sphinx
 sphinx==4.2.0
-    # via cygraph
+    # via
+    #   cygraph
+    #   numpydoc
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
 sphinxcontrib-devhelp==1.0.2

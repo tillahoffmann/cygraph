@@ -50,6 +50,7 @@ setup(
             "pytest-cov",
         ],
         "docs": [
+            "numpydoc",
             "sphinx",
         ]
     },

@@ -108,6 +108,7 @@ jinja2==3.0.2
     #   -r test_requirements.txt
     #   nbconvert
     #   notebook
+    #   numpydoc
     #   sphinx
 jsonschema==4.1.0
     # via nbformat
@@ -180,6 +181,8 @@ numpy==1.22.4
     #   -r test_requirements.txt
     #   matplotlib
     #   scipy
+numpydoc==1.3.1
+    # via -r test_requirements.txt
 packaging==21.0
     # via
     #   -r test_requirements.txt
@@ -283,7 +286,9 @@ snowballstemmer==2.1.0
     #   -r test_requirements.txt
     #   sphinx
 sphinx==4.2.0
-    # via -r test_requirements.txt
+    # via
+    #   -r test_requirements.txt
+    #   numpydoc
 sphinxcontrib-applehelp==1.0.2
     # via
     #   -r test_requirements.txt
