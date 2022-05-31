@@ -1,6 +1,6 @@
 master_doc = "README"
 extensions = [
-    # "matplotlib.sphinxext.plot_directive",
+    "matplotlib.sphinxext.plot_directive",
     "numpydoc",
     "sphinx.ext.doctest",
     "sphinx.ext.napoleon",
@@ -12,6 +12,10 @@ napoleon_custom_sections = [("Returns", "params_style")]
 plot_formats = [
     ("png", 144),
 ]
+plot_pre_code = """
+from cygraph.util import plot_graph
+from cygraph import generators
+"""
 html_theme = "nature"
 
 # Configure autodoc to avoid excessively long fully-qualified names.
