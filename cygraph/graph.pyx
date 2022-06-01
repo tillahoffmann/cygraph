@@ -94,7 +94,7 @@ cdef class Graph:
         # Using [node] implicitly creates the node, but we don't know whether it existed before.
         self._adjacency_map[node]
         IF DEBUG_LOGGING:
-            LOGGER.info("added node %d", node)
+            LOGGER.debug("added node %d", node)
 
     cpdef int add_nodes_from(self, node_set_t nodes):
         """
@@ -129,7 +129,7 @@ cdef class Graph:
         if not self._remove_node(node):
             raise KeyError(f"node {node} does not exist")
         IF DEBUG_LOGGING:
-            LOGGER.info("removed node %d", node)
+            LOGGER.debug("removed node %d", node)
 
     cpdef int remove_nodes_from(self, node_set_t nodes):
         """
@@ -202,7 +202,7 @@ cdef class Graph:
             added: `True` if `(u, v)` was added, `False` if it already existed.
         """
         IF DEBUG_LOGGING:
-            LOGGER.info("added edge (%d, %d)", u, v)
+            LOGGER.debug("added edge (%d, %d)", u, v)
         return self._add_directed_edge(u, v) and self._add_directed_edge(v, u)
 
     cpdef int add_edges_from(self, edge_list_t edges):
@@ -237,7 +237,7 @@ cdef class Graph:
         if not self._remove_edge(u, v):
             raise KeyError(f"edge {(u, v)} does not exist")
         IF DEBUG_LOGGING:
-            LOGGER.info("removed edge (%d, %d)", u, v)
+            LOGGER.debug("removed edge (%d, %d)", u, v)
 
     cpdef int remove_edges_from(self, edge_list_t edges):
         """

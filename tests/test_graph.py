@@ -255,7 +255,7 @@ def test_views(name: str):
 @pytest.mark.skipif(not cygraph.DEBUG_LOGGING, reason="debug logging not enabled")
 def test_debug_logging_add_remove_node(caplog: pytest.LogCaptureFixture):
     graph = cygraph.Graph()
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.DEBUG):
         graph.add_node(17)
         graph.remove_node(17)
     assert "added node 17" in caplog.text
@@ -265,7 +265,7 @@ def test_debug_logging_add_remove_node(caplog: pytest.LogCaptureFixture):
 @pytest.mark.skipif(not cygraph.DEBUG_LOGGING, reason="debug logging not enabled")
 def test_debug_logging_add_remove_edge(caplog: pytest.LogCaptureFixture):
     graph = cygraph.Graph()
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.DEBUG):
         graph.add_edge(0, 7)
         graph.remove_edge(0, 7)
     assert "added edge (0, 7)" in caplog.text
