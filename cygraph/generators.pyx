@@ -12,6 +12,11 @@ from .util import assert_interval
 import typing
 
 
+IF DEBUG_LOGGING:
+    import logging
+    LOGGER = logging.getLogger()
+
+
 cdef class RandomEngine:
     """
     Mersenne Twister pseudo-random generator of 32-bit numbers with a state size of 19937 bits.
@@ -168,10 +173,10 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
     2. For each neighbors :math:`j`, we choose one of the edges :math:`(i, j)` and :math:`(t, j)`
        and remove it with probability `deletion_proba`. I.e., we remove at most one of the edges.
     3. The nodes :math:`i` and :math:`t` are connected with probability `interaction_proba`.
-    4. Each of :math:`i` and :math:`t` are discarded if they do not have any connections. This
-       ensures the graph remains connected. This strategy is adpated from [Ispolatov2005]_ who
-       considered a simpler model without edge deletion. See :func:`duplication_mutation_graph` for
-       further details.
+    4. Discard the new node :math:`t` if it does not have any edges. This makes it more likely but
+       cannot guarantee that the graph is connected. The strategy is adpated from [Ispolatov2005]_
+       who considered a simpler model without edge deletion. See :func:`duplication_mutation_graph`
+       for further details.
 
     .. [Ispolatov2005] I. Ispolatov, P. L. Krapivsky, and A. Yuryev. Duplication-divergence model of
        protein interaction network. *Phys. Rev. E*, 71(6):061911, 2005.
@@ -201,36 +206,44 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
         graph = Graph()
         graph.add_edge(0, 1)
 
-    new_node = graph.number_of_nodes()
     while graph.number_of_nodes() < n:
+        new_node = graph.number_of_nodes()
         # Choose a random node from the current graph to duplicate. We may need to sample multiple
         # times if one of the nodes was deleted due to being disconnected. This may be costly if the
-        # deletion probability is high.
+        # deletion probability is high and the interaction probability is low.
         random_node_dist = uniform_int_distribution[node_t](0, new_node - 1)
         while True:
             seed_node = random_node_dist(random_engine_instance)
             if graph.has_node(seed_node):
                 break
+        IF DEBUG_LOGGING:
+            LOGGER.info("selected seed %d for new node %d", seed_node, new_node)
 
         # Duplicate edges and deal with deletion.
         for neighbor in graph._adjacency_map[seed_node]:
-            if deletion_dist(random_engine_instance) and original_dist(random_engine_instance):
-                graph.remove_edge(seed_node, neighbor)
+            if deletion_dist(random_engine_instance):  # Delete one of the edges.
+                if original_dist(random_engine_instance):  # Delete the old and create the new edge.
+                    graph.remove_edge(seed_node, neighbor)
+                    graph.add_edge(new_node, neighbor)
+                    IF DEBUG_LOGGING:
+                        LOGGER.info("deleted old edge %s; created new edge %s",
+                                    (seed_node, neighbor), (new_node, neighbor))
+                else:  # Keep the old and don't create the new edge.
+                    IF DEBUG_LOGGING:
+                        LOGGER.info("did not created new edge %s", (new_node, neighbor))
+            else:  # Create the new edge.
                 graph.add_edge(new_node, neighbor)
-            else:
-                graph.add_edge(new_node, neighbor)
+                IF DEBUG_LOGGING:
+                    LOGGER.info("created new edge %s", (new_node, neighbor))
 
         # Add interaction.
         if interaction_dist(random_engine_instance):
             graph.add_edge(seed_node, new_node)
-
-        # Advance the new node label if we made any connections.
-        if graph.has_node(new_node):
-            new_node += 1
-
-        # Delete the seed node if it became disconnected.
-        if not graph._adjacency_map[seed_node].size():
-            graph.remove_node(seed_node)
+            IF DEBUG_LOGGING:
+                LOGGER.info("created complementation edge %s", (seed_node, new_node))
+        else:
+            IF DEBUG_LOGGING:
+                LOGGER.info("did not create complementation edge %s", (seed_node, new_node))
 
     return graph
 
