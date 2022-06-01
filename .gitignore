@@ -134,7 +134,7 @@ dmypy.json
 playground/
 workspace/
 
-cygraph/*.cpp
-cygraph/*.html
+cygraph/**/*.cpp
+cygraph/**/*.html
 tests/test.cpp
 tests/test.html
