@@ -30,9 +30,9 @@ def test_random_engine():
 @pytest.mark.parametrize("generator, kwargs, connected", [
     (generators.duplication_mutation_graph, {"deletion_proba": 0.5, "mutation_proba": 0.5}, True),
     (generators.duplication_complementation_graph,
-     {"deletion_proba": 0.1, "interaction_proba": 0.9}, True),
+     {"deletion_proba": 0.01, "interaction_proba": 0.99}, True),
     (generators.duplication_complementation_graph,
-     {"deletion_proba": 0.9, "interaction_proba": 0.1}, None),
+     {"deletion_proba": 0.99, "interaction_proba": 0.01}, False),
     (generators.gnp_random_graph, {"p": 0.9}, True),
     (generators.gnp_random_graph, {"p": 1e-3}, False),
     (generators.surfer_graph, {"connection_proba": 0.3}, True),

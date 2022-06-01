@@ -11,7 +11,7 @@ if os.environ.get('CYTHON_TRACE'):
 extensions = [
     Extension(
         name="*",
-        sources=["cygraph/*.pyx"],
+        sources=["cygraph/**/*.pyx"],
         extra_compile_args=[
             "-std=c++17",
         ],
