@@ -12,8 +12,21 @@ cdef class Graph:
     """
     Undirected, unweighted, unattributed graph that is compatible with :class:`networkx.Graph` by
     duck-typing. Detailed descriptions of all methods can be found in the networkx documentation.
+
+    Args:
+        nodes_or_graph: Nodes to add to the graph or a graph instance to make a copy of.
+        edges: Edges to add to the graph.
     """
-    def __init__(self):
+    def __init__(self, nodes_or_graph=None, edges=None):
+        cdef Graph graph
+        if isinstance(nodes_or_graph, Graph):
+            graph = nodes_or_graph
+            for pair in graph._adjacency_map:
+                self._adjacency_map[pair.first] = pair.second
+        elif nodes_or_graph is not None:
+            self.add_nodes_from(nodes_or_graph)
+        if edges is not None:
+            self.add_edges_from(edges)
         self._property_cache = {}
 
     @property

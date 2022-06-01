@@ -278,3 +278,21 @@ def test_complex_edge_view():
         graph.edges(nbunch=[0])
     with pytest.raises(NotImplementedError):
         graph.edges(data=True)
+
+
+def test_graph_init():
+    nodes = {0, 1, 2, 3}
+    edges = {(0, 1), (1, 2), (0, 2)}
+    reference = cygraph.Graph()
+    reference.add_nodes_from(nodes)
+    reference.add_edges_from(edges)
+    assert_same_graph(reference, cygraph.Graph(nodes, edges))
+
+
+def test_graph_init_copy():
+    graph = cygraph.Graph()
+    graph.add_edge(0, 1)
+    copy = cygraph.Graph(graph)
+    copy.add_edge(0, 2)
+    assert not graph.has_edge(0, 2)
+
