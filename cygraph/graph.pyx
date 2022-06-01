@@ -296,6 +296,9 @@ cdef class Graph:
             num_edges += item.second.size()
         return num_edges // 2
 
+    def __contains__(self, node: node_t) -> bool:
+        return self.has_node(node)
+
 
 cdef class _View:
     """

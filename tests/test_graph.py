@@ -192,6 +192,14 @@ def test_remove_connected_node(triangle_graph: nx.Graph):
         assert 0 not in triangle_graph.neighbors(node)
 
 
+def test_has_node(triangle_graph: nx.Graph):
+    assert 0 in triangle_graph
+    assert triangle_graph.has_node(0)
+
+    assert 7 not in triangle_graph
+    assert not triangle_graph.has_node(7)
+
+
 def test_degree_view(triangle_graph: nx.Graph):
     with pytest.raises(KeyError):
         triangle_graph.degree[99]
