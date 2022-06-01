@@ -1,4 +1,5 @@
 from cython.operator cimport dereference, preincrement
+from libcpp.algorithm cimport sort
 import numbers
 import typing
 
@@ -383,3 +384,59 @@ cdef class NeighborView(_View):
         if it != self.graph._adjacency_map.end():
             return dereference(it).second
         raise KeyError(f"node {node} does not exist")
+
+
+cpdef bint are_node_labels_normalized(graph: Graph):
+    """
+    Return whether node labels are consecutive starting at zero.
+
+    Args:
+        graph: Graph whose node labels to check.
+
+    Returns:
+        normalized: `True` if node labels are consecutive starting at zero. `False` otherwise.
+
+    Note:
+        This operation is relatively expensive because it creates an intermediate sorted vector of
+        node labels.
+    """
+    cdef node_t previous
+    cdef node_list_t nodes
+    if graph.number_of_nodes() == 0:
+        return True
+
+    # Create a sorted vector of node labels.
+    for pair in graph._adjacency_map:
+        nodes.push_back(pair.first)
+    sort(nodes.begin(), nodes.end())
+
+    it = nodes.begin()
+    previous = dereference(it)
+    if previous != 0:
+        return False
+    preincrement(it)
+
+    while it != nodes.end():
+        if dereference(it) - previous != 1:
+            return False
+        previous = dereference(it)
+        preincrement(it)
+    return True
+
+
+cpdef Graph assert_normalized_node_labels(graph: Graph):
+    """
+    Assert that node labels are consecutive starting at zero.
+
+    Args:
+        graph: Graph whose node labels to check.
+
+    Returns:
+        graph: Input graph if node labels are consecutive.
+
+    Raises:
+        ValueError: If the node labels are not normalized.
+    """
+    if not are_node_labels_normalized(graph):
+        raise ValueError("node labels are not normalized")
+    return graph

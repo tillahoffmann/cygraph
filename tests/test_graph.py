@@ -296,3 +296,16 @@ def test_graph_init_copy():
     copy.add_edge(0, 2)
     assert not graph.has_edge(0, 2)
 
+
+@pytest.mark.parametrize("graph, failing", [
+    (cygraph.Graph({0, 1, 2}), False),
+    (cygraph.Graph({-1, 0, 1}), True),
+    (cygraph.Graph({1, 2}), True),
+    (cygraph.Graph({0, 2}), True),
+])
+def test_assert_normalized_node_labels(graph: cygraph.Graph, failing: bool):
+    if failing:
+        with pytest.raises(ValueError):
+            cygraph.graph.assert_normalized_node_labels(graph)
+    else:
+        assert cygraph.graph.assert_normalized_node_labels(graph) is graph

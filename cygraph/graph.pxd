@@ -39,3 +39,6 @@ cdef class Graph:
     cpdef int number_of_edges(self)
     cdef int _add_directed_edge(self, node_t source, node_t target)
     cdef int _remove_directed_edge(self, node_t source, node_t target)
+
+
+cpdef Graph assert_normalized_node_labels(Graph graph)

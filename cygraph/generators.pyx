@@ -1,6 +1,6 @@
 # cython: cdivision = True
 
-from .graph cimport count_t, Graph, node_t, node_list_t, node_set_t
+from .graph cimport assert_normalized_node_labels, count_t, Graph, node_t, node_list_t, node_set_t
 from .libcpp.algorithm cimport sample
 from .libcpp.random cimport bernoulli_distribution, binomial_distribution, mt19937, random_device, \
     uniform_int_distribution, uniform_real_distribution
@@ -127,6 +127,7 @@ def duplication_mutation_graph(n: int, deletion_proba: float, mutation_proba: fl
     if not graph:
         graph = Graph()
         graph.add_edge(0, 1)
+    assert_normalized_node_labels(graph)
 
     while graph.number_of_nodes() < n:
         new_node = graph.number_of_nodes()
@@ -205,6 +206,7 @@ def duplication_complementation_graph(n: int, deletion_proba: float, interaction
     if not graph:
         graph = Graph()
         graph.add_edge(0, 1)
+    assert_normalized_node_labels(graph)
 
     while graph.number_of_nodes() < n:
         new_node = graph.number_of_nodes()
@@ -304,7 +306,7 @@ def gnp_random_graph(int n, p: float, graph: Graph = None, random_engine=None) -
     assert_interval("p", p, 0, 1)
     assert_interval("n", n, 1, None)
 
-    graph = graph or Graph()
+    graph = assert_normalized_node_labels(graph or Graph())
 
     for u in range(n):
         graph.add_node(u)
@@ -359,6 +361,7 @@ def redirection_graph(n: count_t, p: float, m: count_t, graph: Graph = None, ran
     if graph is None:
         graph = Graph()
         graph.add_node(0)
+    assert_normalized_node_labels(graph)
 
     while graph.number_of_nodes() < n:
         # Generate the sequence of neighbors by sampling seeds and redirecting proabilistically.
