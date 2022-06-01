@@ -35,6 +35,7 @@ def test_random_engine():
      {"deletion_proba": 0.9, "interaction_proba": 0.1}, None),
     (generators.gnp_random_graph, {"p": 0.9}, True),
     (generators.gnp_random_graph, {"p": 1e-3}, False),
+    (generators.surfer_graph, {"connection_proba": 0.3}, True),
 ])
 def test_generators(random_engine: int, num_nodes: int, generator: typing.Callable, kwargs: dict,
                     connected: bool):
@@ -42,6 +43,7 @@ def test_generators(random_engine: int, num_nodes: int, generator: typing.Callab
     assert graph.number_of_nodes() == num_nodes
     if connected is not None:
         assert nx.is_connected(graph) == connected
+    assert (loops := nx.number_of_selfloops(graph)) == 0, f"graph has {loops} self loops"
 
     if generator is generators.gnp_random_graph:
         dist = stats.binom(num_nodes * (num_nodes - 1) // 2, kwargs["p"])
