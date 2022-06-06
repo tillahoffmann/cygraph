@@ -1,5 +1,5 @@
-from cygraph import generators
-from cygraph import util
+from cygraph import generators, util
+from matplotlib import pyplot as plt
 import pytest
 
 
@@ -26,3 +26,5 @@ def test_assert_interval(fail, args):
 
 def test_plot_graph():
     util.plot_graph(generators.gnp_random_graph(10, 0.1))
+    fig, ax = plt.subplots()
+    util.plot_graph(generators.gnp_random_graph(10, 0.1), ax=ax)
