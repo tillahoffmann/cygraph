@@ -28,13 +28,26 @@ def test_random_engine():
 @pytest.mark.parametrize("random_engine", [None, 17, generators.get_random_engine(9)])
 @pytest.mark.parametrize("num_nodes", [100, 1000])
 @pytest.mark.parametrize("generator, kwargs, connected", [
-    (generators.duplication_mutation_graph, {"deletion_proba": 0.5, "mutation_proba": 0.5}, True),
+    # This graph is guaranteed to be connected.
+    (generators.duplication_mutation_graph,
+     {"deletion_proba": 0.5, "mutation_proba": 0.5, "drop_isolates": True}, True),
+    # This graph is not guaranteed to be disconnected, but should be with high probability.
+    (generators.duplication_mutation_graph,
+     {"deletion_proba": 0.99, "mutation_proba": 0.01, "drop_isolates": False}, False),
+    # This graph is not guaranteed to be connected, but should be with high probability.
+    (generators.duplication_mutation_graph,
+     {"deletion_proba": 0.01, "mutation_proba": .99, "drop_isolates": True}, True),
+    # This graph is not guaranteed to be connected, but should be with high probability.
     (generators.duplication_complementation_graph,
      {"deletion_proba": 0.01, "interaction_proba": 0.99}, True),
+    # This graph is not guaranteed to be disconnected, but should be with high probability.
     (generators.duplication_complementation_graph,
      {"deletion_proba": 0.99, "interaction_proba": 0.01}, False),
+    # This graph is not guaranteed to be connected, but should be with high probability.
     (generators.gnp_random_graph, {"p": 0.9}, True),
+    # This graph is not guaranteed to be disconnected, but should be with high probability.
     (generators.gnp_random_graph, {"p": 1e-3}, False),
+    # This graph is guaranteed to be connected.
     (generators.surfer_graph, {"connection_proba": 0.3}, True),
 ])
 def test_generators(random_engine: int, num_nodes: int, generator: typing.Callable, kwargs: dict,
