@@ -1,7 +1,10 @@
+from libcpp.iterator cimport back_inserter
+from libcpp.utility cimport move
+
 from ..graph cimport assert_normalized_node_labels, count_t, Graph, node_t, node_list_t, node_set_t
 from ..libcpp.algorithm cimport sample
-from ..libcpp.random cimport bernoulli_distribution, mt19937, uniform_int_distribution
-from libcpp.utility cimport move
+from ..libcpp.random cimport bernoulli_distribution, binomial_distribution, mt19937, \
+    uniform_int_distribution
 from ..util import assert_interval
 from .util cimport get_random_engine
 
@@ -11,8 +14,8 @@ IF DEBUG_LOGGING:
     LOGGER = logging.getLogger()
 
 
-def surfer_graph(num_nodes: count_t, connection_proba: float, graph: Graph = None,
-                 random_engine=None) -> Graph:
+def surfer_graph(num_nodes: count_t, connection_proba: float, max_num_candidates: count_t = 1,
+                 graph: Graph = None, random_engine=None) -> Graph:
     """
     Random surfer graph obtained by exploring the neighborhood of a seed node using a random walk
     and connecting to nodes in the process.
@@ -35,8 +38,11 @@ def surfer_graph(num_nodes: count_t, connection_proba: float, graph: Graph = Non
        plot_graph(generators.surfer_graph(20, 0.6))
     """
     cdef uniform_int_distribution[node_t] random_node_dist
-    cdef bernoulli_distribution connection_dist = bernoulli_distribution(connection_proba)
+    cdef binomial_distribution[count_t] num_candidates_dist
+    cdef count_t num_candidates
     cdef node_t new_node, seed_node, neighbor
+    cdef node_list_t queue, candidates
+    cdef node_set_t visited
     cdef node_set_t* ptr
     cdef mt19937 random_engine_instance = get_random_engine(random_engine).instance
     assert_interval("num_nodes", num_nodes, 1, None)
@@ -49,21 +55,50 @@ def surfer_graph(num_nodes: count_t, connection_proba: float, graph: Graph = Non
 
     while graph.number_of_nodes() < num_nodes:
         new_node = graph.number_of_nodes()
+        # Sample a seed node, populate the queue, and add the seed to the visited nodes.
         random_node_dist = uniform_int_distribution[node_t](0, new_node - 1)
         seed_node = random_node_dist(random_engine_instance)
-        while True:
-            # First identify the neighbor to connect to so we don't accidentally sample the new node
-            # itself.
-            neighbor = -1
-            if connection_dist(random_engine_instance):
-                # Surf if there is at least one other neighbor.
-                ptr = &graph._adjacency_map[seed_node]
-                if ptr.size() > 1:
-                    sample(ptr.begin(), ptr.end(), &neighbor, 1, move(random_engine_instance))
+        queue.clear()
+        queue.push_back(seed_node)
+        visited.clear()
+        visited.insert(seed_node)
 
-            # Stop if we don't create a new edge (we've back-tracked) or if there's no new neighbor.
-            if not graph.add_edge(seed_node, new_node) or neighbor == -1:
-                break
-            seed_node = neighbor
+        IF DEBUG_LOGGING:
+            LOGGER.info("created new node label %d with seed %d", new_node, seed_node)
+
+        while queue.size():
+            # Get a seed node from the queue.
+            seed_node = queue.back()
+            queue.pop_back()
+            # Choose how many neighbors to sample.
+            ptr = &graph._adjacency_map[seed_node]
+            num_candidates_dist = binomial_distribution[count_t](
+                min(ptr.size(), max_num_candidates), connection_proba)
+            num_candidates = num_candidates_dist(random_engine_instance)
+            # Sample from the neighbors and add them to a candidate set.
+            candidates.clear()
+            sample(ptr.begin(), ptr.end(), back_inserter(candidates), num_candidates,
+                   move(random_engine_instance))
+            IF DEBUG_LOGGING:
+                LOGGER.info("sampled %d candidates %s from %d neighbors of seed %d",
+                            candidates.size(), candidates, ptr.size(), seed_node)
+
+            # Add the neighbors to the queue that have not already been visited and mark them as
+            # visited so they don't get added to the queue again.
+            for candidate in candidates:
+                if visited.find(candidate) == visited.end():
+                    queue.push_back(candidate)
+                    visited.insert(candidate)
+                    #IF DEBUG_LOGGING:
+                    #    LOGGER.info("added newly discovered candidate %d to the queue", candidate)
+                else:
+                    pass
+                    #IF DEBUG_LOGGING:
+                    #    LOGGER.info("discarded visited candidate %d", candidate)
+            # Add a connection to the seed.
+            graph.add_edge(seed_node, new_node)
+            IF DEBUG_LOGGING:
+                LOGGER.info("added edge (%d, %d)", seed_node, new_node)
+                LOGGER.info("queue state is %s; visited set is %s", queue, visited)
 
     return graph
